@@ -1,0 +1,23 @@
+# 虛擬環境（不要加進 git
+venv/
+
+# py2app / pyinstaller 打包產物（會自動重建）
+build/
+dist/
+*.spec
+
+# Python 編譯中繼檔
+__pycache__/
+*.pyc
+*.pyo
+
+# DS_Store 是 macOS 系統檔案
+.DS_Store
+
+# 打包出來的應用程式壓縮檔
+*.app
+*.dmg
+*.zip
+
+# logs 或臨時資料（如果有）
+*.log

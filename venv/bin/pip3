@@ -1,4 +1,4 @@
-#!/Users/tsan-feng/Desktop/line-bot/venv/bin/python3
+#!/Users/tsan-feng/Desktop/line-bot/venv-tk86/bin/python3.13
 # -*- coding: utf-8 -*-
 import re
 import sys

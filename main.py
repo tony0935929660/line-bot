@@ -5,61 +5,78 @@ import os
 import platform
 import tkinter as tk
 from tkinter import filedialog
-from AppKit import NSPasteboard, NSPasteboardTypeTIFF, NSImage
 from PIL import Image, ImageTk
 
 x = 164
 y = 209
 
-# 狀態變數
-image_path = None
+image_refs = []
+paths = []
 
-def copy_image_to_clipboard():
-    global image_path
-    if image_path is None:
-        return
-    ns_image = NSImage.alloc().initWithContentsOfFile_(image_path)
-    if ns_image is None:
-        return
-    pasteboard = NSPasteboard.generalPasteboard()
-    pasteboard.clearContents()
-    pasteboard.setData_forType_(ns_image.TIFFRepresentation(), NSPasteboardTypeTIFF)
+if platform.system() == "Darwin":
+    from AppKit import NSPasteboard, NSPasteboardTypeTIFF, NSImage
+
+    def paste():
+        os.system('osascript -e \'tell application "System Events" to keystroke "v" using command down\'')
+        time.sleep(0.5)
+
+    def copy_image(path):
+        if path is None:
+            return
+        ns_image = NSImage.alloc().initWithContentsOfFile_(path)
+        if ns_image is None:
+            return
+        pasteboard = NSPasteboard.generalPasteboard()
+        pasteboard.clearContents()
+        pasteboard.setData_forType_(ns_image.TIFFRepresentation(), NSPasteboardTypeTIFF)
+        time.sleep(0.2)
+elif platform.system() == "Windows":
+    # 用 pywin32
+    import win32clipboard
+    from io import BytesIO
+    from PIL import Image
+
+    def paste():
+        pyautogui.hotkey("ctrl", "v")
+        time.sleep(0.5)
+
+    def copy_image(path):
+        image = Image.open(path).convert("RGB")
+        output = BytesIO()
+        image.save(output, "BMP")
+        data = output.getvalue()[14:]
+        output.close()
+        win32clipboard.OpenClipboard()
+        win32clipboard.EmptyClipboard()
+        win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
+        win32clipboard.CloseClipboard()
+        time.sleep(0.2)
 
 def copy_text(msg):
     pyperclip.copy(msg)
+    time.sleep(0.5)
 
-def paste():
-    if platform.system() == "Darwin":
-        os.system('osascript -e \'tell application "System Events" to keystroke "v" using command down\'')
-    else:
-        pyautogui.hotkey("ctrl", "v")
-
-def click_enter():
+def enter():
     pyautogui.press("enter")
+    time.sleep(0.5)
 
-def click_esc():
+def leave():
     pyautogui.press("esc")
+    time.sleep(0.5)
 
 def click_down_arrow():
     pyautogui.press("down")
+    time.sleep(0.5)
 
 def send(msg):
-    click_enter()
-    time.sleep(0.5)
+    enter()
     copy_text(msg)
-    time.sleep(0.5)
     paste()
-    time.sleep(0.5)
-    click_enter()
-    time.sleep(0.5)
-    copy_image_to_clipboard()
-    time.sleep(0.5)
-    paste()
-    time.sleep(0.5)
-    click_enter()
-    time.sleep(0.5)
-    click_esc()
-    time.sleep(0.5)
+    for path in paths:
+        copy_image(path)
+        paste()
+    enter()
+    leave()
 
 def run(msg, count):
     pyautogui.moveTo(x, y, duration=0.5)
@@ -76,24 +93,35 @@ def start_bot():
     print(f"即將發送：{msg}（次數：{count}）")
     run(msg, count)
 
-def upload_image():
-    global image_path
-    path = filedialog.askopenfilename(
-        filetypes=[("Image files", (".png", ".jpg", ".jpeg", ".gif"))]
+def upload_images():
+    # 清除前次圖片（如果有）
+    for widget in image_frame.winfo_children():
+        widget.destroy()
+    image_refs.clear()
+    paths.clear()
+
+    file_paths = filedialog.askopenfilenames(
+        title="選擇多張圖片",
+        filetypes=[("Image Files", (".png", ".jpg", ".jpeg", ".gif"))]
     )
-    if path:
-        image_path = path
+
+    for path in file_paths:
+        # 建立縮圖
         img = Image.open(path)
         img.thumbnail((150, 150))
         tk_img = ImageTk.PhotoImage(img)
-        preview_label.config(image=tk_img)
-        preview_label.image = tk_img
-        status_label.config(text="✅ 圖片載入完成，將傳送圖片")
+
+        # 建立 Label 顯示圖片
+        label = tk.Label(image_frame, image=tk_img, bg="gray15")
+        label.pack(side="left", padx=5, pady=5)
+
+        image_refs.append(tk_img)  # 儲存參考避免被回收
+        paths.append(path)
 
 # 建立主視窗
 window = tk.Tk()
 window.title("LINE 自動發送工具")
-window.geometry("320x400")
+window.geometry("320x500")
 window.configure(bg="gray15")
 
 tk.Label(window, text="發送訊息：", bg="gray15", fg="white").pack(pady=(10, 0))
@@ -105,9 +133,9 @@ count_entry = tk.Entry(window, width=30)
 count_entry.pack()
 
 # 圖片區塊
-tk.Button(window, text="📤 上傳圖片", command=upload_image).pack(pady=(10, 0))
-preview_label = tk.Label(window, bg="gray15")
-preview_label.pack()
+tk.Button(window, text="📤 上傳圖片", command=upload_images).pack(pady=(10, 0))
+image_frame = tk.Frame(window, bg="gray15")
+image_frame.pack(fill="both", expand=True)
 
 # 狀態提示
 status_label = tk.Label(window, text="", bg="gray15", fg="lightgreen")
