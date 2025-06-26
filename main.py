@@ -8,13 +8,14 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 
 x = 164
-y = 209
 
 image_refs = []
 paths = []
 
 if platform.system() == "Darwin":
     from AppKit import NSPasteboard, NSPasteboardTypeTIFF, NSImage
+
+    y = 209
 
     def paste():
         os.system('osascript -e \'tell application "System Events" to keystroke "v" using command down\'')
@@ -35,6 +36,8 @@ elif platform.system() == "Windows":
     import win32clipboard
     from io import BytesIO
     from PIL import Image
+
+    y = 180
 
     def paste():
         pyautogui.hotkey("ctrl", "v")
