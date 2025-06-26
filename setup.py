@@ -2,16 +2,29 @@ from setuptools import setup
 
 APP = ['main.py']
 OPTIONS = {
-    'argv_emulation': True,
-    'packages': ['PIL', 'pyautogui', 'pyperclip'],
-    'plist': {
-        'CFBundleName': 'LINE Sender',
-        'CFBundleShortVersionString': '1.0.0',
-        'CFBundleIdentifier': 'com.yourname.linesender',
-        'NSHighResolutionCapable': True
-    },
-    # 👇 加這行可防止打包時自動載入無用模組
+    'argv_emulation': False,
+    'packages': [
+        'pyautogui',
+        'pyperclip',
+        'PIL',
+    ],
+    'includes': [
+        "tkinter",
+        "pyautogui",
+        "pyperclip",
+        "PIL",
+        "Quartz",
+        "AppKit",
+        "Foundation",
+        "objc",
+    ],
     'excludes': ['rubicon'],
+    'plist': {
+        'CFBundleName': 'LINE 自動發送工具',
+        'CFBundleIdentifier': 'com.example.linesender',
+        'CFBundleVersion': '0.1.0',
+        'CFBundleShortVersionString': '0.1.0',
+    },
 }
 
 setup(
