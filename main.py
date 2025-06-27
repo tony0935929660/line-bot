@@ -6,8 +6,7 @@ import platform
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk
-
-x = 164
+from Foundation import NSAppleScript, NSError
 
 image_refs = []
 paths = []
@@ -71,6 +70,37 @@ def click_down_arrow():
     pyautogui.press("down")
     time.sleep(0.5)
 
+def run_applescript(script):
+    apple_script = NSAppleScript.alloc().initWithSource_(script)
+    result, error = apple_script.executeAndReturnError_(None)
+    if error:
+        print(f"Error: {error}")
+        return None
+    return result
+
+def get_position():
+    # AppleScript to get the window position of LINE
+    applescript = '''
+    tell application "System Events"
+        tell process "LINE"
+            set windowPosition to position of window 1
+        end tell
+    end tell
+    '''
+    # Get window position and extract values
+    window_position = run_applescript(applescript)
+    if window_position:
+        # Access the X and Y values from the NSAppleEventDescriptor object
+        x = int(window_position.descriptorAtIndex_(1).stringValue())
+        y = int(window_position.descriptorAtIndex_(2).stringValue())
+    else:
+        print("Could not get the window position.")
+        exit()
+
+    x += 164
+    y += 180
+    return [x, y]
+
 def send(msg):
     enter()
     copy_text(msg)
@@ -82,6 +112,7 @@ def send(msg):
     leave()
 
 def run(msg, count):
+    x, y = get_position()
     pyautogui.moveTo(x, y, duration=0.5)
     pyautogui.click()
     for i in range(count):
