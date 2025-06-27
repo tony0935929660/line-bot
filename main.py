@@ -1,124 +1,27 @@
-import pyautogui
-import pyperclip
-import time
-import os
-import platform
 import tkinter as tk
+import utills.actions as act
 from tkinter import filedialog
 from PIL import Image, ImageTk
-from Foundation import NSAppleScript, NSError
 
 image_refs = []
 paths = []
 
-if platform.system() == "Darwin":
-    from AppKit import NSPasteboard, NSPasteboardTypeTIFF, NSImage
-
-    y = 209
-
-    def paste():
-        os.system('osascript -e \'tell application "System Events" to keystroke "v" using command down\'')
-        time.sleep(0.5)
-
-    def copy_image(path):
-        if path is None:
-            return
-        ns_image = NSImage.alloc().initWithContentsOfFile_(path)
-        if ns_image is None:
-            return
-        pasteboard = NSPasteboard.generalPasteboard()
-        pasteboard.clearContents()
-        pasteboard.setData_forType_(ns_image.TIFFRepresentation(), NSPasteboardTypeTIFF)
-        time.sleep(0.2)
-elif platform.system() == "Windows":
-    # 用 pywin32
-    import win32clipboard
-    from io import BytesIO
-    from PIL import Image
-
-    y = 180
-
-    def paste():
-        pyautogui.hotkey("ctrl", "v")
-        time.sleep(0.5)
-
-    def copy_image(path):
-        image = Image.open(path).convert("RGB")
-        output = BytesIO()
-        image.save(output, "BMP")
-        data = output.getvalue()[14:]
-        output.close()
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
-        win32clipboard.CloseClipboard()
-        time.sleep(0.2)
-
-def copy_text(msg):
-    pyperclip.copy(msg)
-    time.sleep(0.5)
-
-def enter():
-    pyautogui.press("enter")
-    time.sleep(0.5)
-
-def leave():
-    pyautogui.press("esc")
-    time.sleep(0.5)
-
-def click_down_arrow():
-    pyautogui.press("down")
-    time.sleep(0.5)
-
-def run_applescript(script):
-    apple_script = NSAppleScript.alloc().initWithSource_(script)
-    result, error = apple_script.executeAndReturnError_(None)
-    if error:
-        print(f"Error: {error}")
-        return None
-    return result
-
-def get_position():
-    # AppleScript to get the window position of LINE
-    applescript = '''
-    tell application "System Events"
-        tell process "LINE"
-            set windowPosition to position of window 1
-        end tell
-    end tell
-    '''
-    # Get window position and extract values
-    window_position = run_applescript(applescript)
-    if window_position:
-        # Access the X and Y values from the NSAppleEventDescriptor object
-        x = int(window_position.descriptorAtIndex_(1).stringValue())
-        y = int(window_position.descriptorAtIndex_(2).stringValue())
-    else:
-        print("Could not get the window position.")
-        exit()
-
-    x += 164
-    y += 180
-    return [x, y]
-
 def send(msg):
-    enter()
-    copy_text(msg)
-    paste()
+    act.enter()
+    act.copy_text(msg)
+    act.paste()
     for path in paths:
-        copy_image(path)
-        paste()
-    enter()
-    leave()
-
+        act.copy_image(path)
+        act.paste()
+    act.enter()
+    act.leave()
+    
 def run(msg, count):
-    x, y = get_position()
-    pyautogui.moveTo(x, y, duration=0.5)
-    pyautogui.click()
+    x, y = act.get_position()
+    act.click_at_position(x, y)
     for i in range(count):
         for i in range(i):
-            click_down_arrow()
-            time.sleep(0.2)
+            act.click_down_arrow()
         send(msg)
 
 def start_bot():
