@@ -1,11 +1,9 @@
-import time
 import os
 from AppKit import NSPasteboard, NSPasteboardTypeTIFF, NSImage
 from Foundation import NSAppleScript, NSError
 
 def paste():
     os.system('osascript -e \'tell application "System Events" to keystroke "v" using command down\'')
-    time.sleep(0.5)
 
 def copy_image(path):
     if path is None:
@@ -16,12 +14,10 @@ def copy_image(path):
     pasteboard = NSPasteboard.generalPasteboard()
     pasteboard.clearContents()
     pasteboard.setData_forType_(ns_image.TIFFRepresentation(), NSPasteboardTypeTIFF)
-    time.sleep(0.2)
 
 def get_position():
     # 先讓 LINE 到前景
     os.system('osascript -e \'tell application "LINE" to activate\'')
-    time.sleep(0.5)  # 給一點時間切換
 
     applescript = '''
     tell application "System Events"

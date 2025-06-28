@@ -1,5 +1,6 @@
 import tkinter as tk
 import utills.actions as act
+import time
 from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image, ImageTk
@@ -7,24 +8,32 @@ from PIL import Image, ImageTk
 image_refs = []
 paths = []
 
-def send(msg):
+def send(msg, sleep_time):
     act.enter()
+    time.sleep(sleep_time)
     act.copy_text(msg)
+    time.sleep(sleep_time)
     act.paste()
+    time.sleep(sleep_time)
     for path in paths:
         act.copy_image(path)
+        time.sleep(sleep_time)
         act.paste()
+        time.sleep(sleep_time)
     act.enter()
+    time.sleep(sleep_time)
     act.leave()
+    time.sleep(sleep_time)
     
-def run(msg, count, start):
+def run(msg, count, start, sleep_time):
     x, y = act.get_position()
     act.click_at_position(x, y)
     for i in range(count):
         index = i + start - 1
         for i in range(index):
             act.click_down_arrow()
-        send(msg)
+            time.sleep(sleep_time)
+        send(msg, sleep_time)
 
 def start_bot():
     confirm = messagebox.askyesno("確認送出", "你確定要送出資料嗎？")
@@ -33,8 +42,9 @@ def start_bot():
         msg = message_entry.get()
         count = int(count_entry.get())
         start = int(start_entry.get())
+        sleep_time = float(time_entry.get())
         print(f"即將發送從第{start}開始發送：{msg}（次數：{count}）")
-        run(msg, count, start)
+        run(msg, count, start, sleep_time)
     else:
         print("❌ 使用者取消送出")
 

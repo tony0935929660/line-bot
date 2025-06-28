@@ -1,6 +1,5 @@
 import pyautogui
 import pyperclip
-import time
 import platform
 
 if platform.system() == "Darwin":
@@ -12,19 +11,15 @@ else:
 
 def copy_text(msg):
     pyperclip.copy(msg)
-    time.sleep(0.5)
 
 def enter():
     pyautogui.press("enter")
-    time.sleep(0.5)
 
 def leave():
     pyautogui.press("esc")
-    time.sleep(0.5)
 
 def click_down_arrow():
     pyautogui.press("down")
-    time.sleep(0.5)
 
 def paste():
     handler.paste()
