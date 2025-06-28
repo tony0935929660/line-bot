@@ -1,6 +1,7 @@
 import tkinter as tk
 import utills.actions as act
 from tkinter import filedialog
+from tkinter import messagebox
 from PIL import Image, ImageTk
 
 image_refs = []
@@ -25,10 +26,15 @@ def run(msg, count):
         send(msg)
 
 def start_bot():
-    msg = message_entry.get()
-    count = int(count_entry.get())
-    print(f"即將發送：{msg}（次數：{count}）")
-    run(msg, count)
+    confirm = messagebox.askyesno("確認送出", "你確定要送出資料嗎？")
+    if confirm:
+        print("✅ 使用者確認送出")
+        msg = message_entry.get()
+        count = int(count_entry.get())
+        print(f"即將發送：{msg}（次數：{count}）")
+        run(msg, count)
+    else:
+        print("❌ 使用者取消送出")
 
 def upload_images():
     # 清除前次圖片（如果有）
