@@ -17,11 +17,12 @@ def send(msg):
     act.enter()
     act.leave()
     
-def run(msg, count):
+def run(msg, count, start):
     x, y = act.get_position()
     act.click_at_position(x, y)
     for i in range(count):
-        for i in range(i):
+        index = i + start - 1
+        for i in range(index):
             act.click_down_arrow()
         send(msg)
 
@@ -31,8 +32,9 @@ def start_bot():
         print("✅ 使用者確認送出")
         msg = message_entry.get()
         count = int(count_entry.get())
-        print(f"即將發送：{msg}（次數：{count}）")
-        run(msg, count)
+        start = int(start_entry.get())
+        print(f"即將發送從第{start}開始發送：{msg}（次數：{count}）")
+        run(msg, count, start)
     else:
         print("❌ 使用者取消送出")
 
@@ -67,13 +69,27 @@ window.title("LINE 自動發送工具")
 window.geometry("320x500")
 window.configure(bg="gray15")
 
+intcmd = (window.register(lambda P: P.isdigit() or P == ""), "%P")
+floatcmd = (window.register(lambda P: P == "" or P.replace(".", "", 1).isdigit()), "%P")
+
 tk.Label(window, text="發送訊息：", bg="gray15", fg="white").pack(pady=(10, 0))
 message_entry = tk.Entry(window, width=30)
 message_entry.pack()
 
 tk.Label(window, text="發送次數：", bg="gray15", fg="white").pack(pady=(10, 0))
-count_entry = tk.Entry(window, width=30)
+count_entry = tk.Entry(window, width=30, validate="key", validatecommand=intcmd)
+count_entry.insert(0, "1")
 count_entry.pack()
+
+tk.Label(window, text="延遲時間：", bg="gray15", fg="white").pack(pady=(10, 0))
+time_entry = tk.Entry(window, width=30, validate="key", validatecommand=floatcmd)
+time_entry.insert(0, "0.5")
+time_entry.pack()
+
+tk.Label(window, text="起始位置：", bg="gray15", fg="white").pack(pady=(10, 0))
+start_entry = tk.Entry(window, width=30, validate="key", validatecommand=intcmd)
+start_entry.insert(0, "1")
+start_entry.pack()
 
 # 圖片區塊
 tk.Button(window, text="📤 上傳圖片", command=upload_images).pack(pady=(10, 0))
