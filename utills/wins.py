@@ -34,4 +34,4 @@ def get_position():
 
     x, y = line_window.topleft
     print(f"✅ 抓到 LINE 視窗座標: x = {x}, y = {y}")
-    return [x + 184, y + 180]
+    return [x + 184, y + 155]
