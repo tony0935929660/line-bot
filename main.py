@@ -29,6 +29,10 @@ def send(msg, sleep_time, is_expend):
 def run(msg, count, start, sleep_time, is_expend):
     x, y = act.get_position()
     act.click_at_position(x, y)
+    if is_expend:
+        act.enter()
+        for i in range(3):
+            act.click_tab()
     for i in range(count):
         index = i + start - 1
         for i in range(index):
