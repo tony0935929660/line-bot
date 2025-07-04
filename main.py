@@ -1,20 +1,12 @@
 import tkinter as tk
 import utills.actions as act
 import time
-import uiautomation as auto
 from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image, ImageTk
 
 image_refs = []
 paths = []
-
-def is_in_line_input():
-    focused = auto.GetFocusedControl()
-    return (
-        focused.ClassName == "AutoSuggestTextArea" and
-        focused.ControlTypeName == "EditControl"
-    )
 
 def send(msg, sleep_time, is_expend):
     act.enter()
@@ -35,20 +27,11 @@ def send(msg, sleep_time, is_expend):
     time.sleep(sleep_time)
     
 def run(msg, count, start, sleep_time, is_expend):
-    x, y = act.get_position()
+    x, y = act.get_first_chatroom_position()
     act.click_at_position(x, y)
     if is_expend:
-        act.enter()
-        for i in range(10):
-            if is_in_line_input():  # ← 修正這裡
-                print("✅ 成功聚焦輸入框")
-                break
-            act.click_tab()
-            time.sleep(0.2)
-        else:
-            print('❌ 找不到輸入框')
-            exit()  # 注意這樣 exit 只會在找不到時執行
-        # TODO: 失誤通知
+        x, y = act.get_input_position()
+        act.click_at_position(x, y)
     for i in range(count):
         index = i + start - 1
         for i in range(index):

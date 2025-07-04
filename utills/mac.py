@@ -15,7 +15,7 @@ def copy_image(path):
     pasteboard.clearContents()
     pasteboard.setData_forType_(ns_image.TIFFRepresentation(), NSPasteboardTypeTIFF)
 
-def get_position():
+def get_first_chatroom_position():
     # 先讓 LINE 到前景
     os.system('osascript -e \'tell application "LINE" to activate\'')
 
@@ -38,3 +38,40 @@ def get_position():
     else:
         print("Could not get the window position.")
         exit()
+
+def get_input_position():
+    # 先讓 LINE 到前景
+    os.system('osascript -e \'tell application "LINE" to activate\'')
+
+    applescript = '''
+    tell application "System Events"
+        tell process "LINE"
+            set windowPosition to position of window 1
+        end tell
+    end tell
+    '''
+    # 執行 AppleScript 並處理結果
+    result, _ = NSAppleScript.alloc().initWithSource_(applescript).executeAndReturnError_(None)
+
+    x = int(result.descriptorAtIndex_(1).stringValue())
+    y = int(result.descriptorAtIndex_(2).stringValue())
+
+    applescript = '''
+    tell application "System Events"
+        tell process "LINE"
+            set windowSize to size of window 1
+        end tell
+    end tell
+    '''
+    # 執行 AppleScript 並處理結果
+    result, _ = NSAppleScript.alloc().initWithSource_(applescript).executeAndReturnError_(None)
+
+    width = int(result.descriptorAtIndex_(1).stringValue())
+    height = int(result.descriptorAtIndex_(2).stringValue())
+    
+    # 計算右下角座標
+    right = x + width - 50
+    bottom = y + height - 50
+
+    print(f"Right-Bottom coordinates: x = {right}, y = {bottom}")
+    return [right, bottom]

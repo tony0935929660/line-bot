@@ -30,11 +30,13 @@ def paste():
 def copy_image(path):
     handler.copy_image(path)
 
-def get_position():
-    return handler.get_position()
+def get_first_chatroom_position():
+    return handler.get_first_chatroom_position()
+
+def get_input_position():
+    return handler.get_input_position()
 
 def click_at_position(x, y):
     original_pos = pyautogui.position()
     pyautogui.click(x,y)
     pyautogui.moveTo(original_pos)
-
