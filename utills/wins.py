@@ -53,4 +53,4 @@ def get_input_position():
     x = line_window.right
     y = line_window.bottom
     print(f"✅ 抓到 LINE 視窗座標: x = {x}, y = {y}")
-    return [x - 10, y - 10]
+    return [x - 50, y - 50]
