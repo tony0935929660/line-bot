@@ -36,7 +36,6 @@ def run(msg, count, start, sleep_time, is_expend):
         index = i + start - 1
         for i in range(index):
             act.click_down_arrow()
-            time.sleep(sleep_time)
         send(msg, sleep_time, is_expend)
 
 def start_bot():
@@ -80,6 +79,7 @@ def upload_images():
 
 # === 主視窗設定 ===
 window = tk.Tk()
+window.iconbitmap("D:\Desktop\line-bot\shanlink_icon.ico")
 window.title("LINE 自動發送工具")
 window.geometry("600x500")
 window.configure(bg="gray15")

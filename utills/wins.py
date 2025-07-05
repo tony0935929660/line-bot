@@ -34,7 +34,7 @@ def get_first_chatroom_position():
 
     x, y = line_window.topleft
     print(f"✅ 抓到 LINE 視窗座標: x = {x}, y = {y}")
-    return [x + 184, y + 155]
+    return [x + 184, y + 175]
 
 def get_input_position():
     # 取得所有視窗
