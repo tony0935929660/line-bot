@@ -1,4 +1,6 @@
 import tkinter as tk
+from tkinter import ttk
+import threading
 import utills.actions as act
 import time
 from tkinter import filedialog
@@ -7,6 +9,15 @@ from PIL import Image, ImageTk
 
 image_refs = []
 paths = []
+
+def update_estimated_time(*args):
+    try:
+        count = int(count_entry.get())
+        sleep_time = float(time_entry.get())
+        estimate_seconds = (1.1 + (sleep_time * 5)) * count  # 預估每次動作進出約兩倍延遲
+        estimate_label.config(text=f"預估時間：約 {estimate_seconds:.1f} 秒")
+    except:
+        estimate_label.config(text="預估時間：-")
 
 def send(msg, sleep_time, is_expend):
     act.enter()
@@ -34,9 +45,14 @@ def run(msg, count, start, sleep_time, is_expend):
         act.click_at_position(x, y)
     for i in range(count):
         index = i + start - 1
-        for i in range(index):
+        for j in range(index):
             act.click_down_arrow()
         send(msg, sleep_time, is_expend)
+        # === 更新進度條 ===
+        percent = ((i + 1) / count) * 100
+        progress_var.set(percent)
+        progress_label.config(text=f"進度：{int(percent)}%({i+1}/{count})")
+        window.update_idletasks()
 
 def start_bot():
     confirm = messagebox.askyesno("確認送出", "你確定要送出資料嗎？")
@@ -48,7 +64,19 @@ def start_bot():
         sleep_time = float(time_entry.get())
         is_expend = repeat_var.get()
         print(f"即將發送從第{start}開始發送：{msg}（次數：{count}）")
-        run(msg, count, start, sleep_time, is_expend)
+
+        start_button.config(state="disabled")
+        progress_var.set(0)
+        progress_label.config(text="進度：0%")
+        window.update_idletasks()
+
+        def run_with_ui_update():
+            run(msg, count, start, sleep_time, is_expend)
+            progress_label.config(text="✅ 完成！")
+            start_button.config(state="normal")
+
+        # ✅ 用 Thread 執行，避免卡住 UI
+        threading.Thread(target=run_with_ui_update, daemon=True).start()
     else:
         print("❌ 使用者取消送出")
 
@@ -81,7 +109,7 @@ def upload_images():
 window = tk.Tk()
 window.iconbitmap("D:\Desktop\line-bot\shanlink_icon.ico")
 window.title("LINE 自動發送工具")
-window.geometry("600x500")
+window.geometry("600x600")
 window.configure(bg="gray15")
 
 # === 驗證函數 ===
@@ -108,11 +136,13 @@ tk.Label(right_frame, text="發送次數：", bg="gray15", fg="white").pack(anch
 count_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
 count_entry.insert(0, "1")
 count_entry.pack()
+count_entry.bind("<KeyRelease>", update_estimated_time)
 
 tk.Label(right_frame, text="延遲時間：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
 time_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=floatcmd)
 time_entry.insert(0, "0.5")
 time_entry.pack()
+time_entry.bind("<KeyRelease>", update_estimated_time)
 
 tk.Label(right_frame, text="起始位置：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
 start_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
@@ -147,8 +177,21 @@ tk.Button(bottom_frame, text="📤 上傳圖片", command=upload_images).pack(pa
 image_frame = tk.Frame(bottom_frame, bg="gray15", height=100)
 image_frame.pack(fill="both", expand=True)
 
+# === 進度條與百分比 ===
+progress_var = tk.DoubleVar()
+progress_bar = ttk.Progressbar(window, variable=progress_var, maximum=100, length=500)
+progress_bar.pack(pady=(5, 0))
+
+progress_label = tk.Label(window, text="", bg="gray15", fg="white")
+progress_label.pack(pady=(0, 10))
+
 # 開始按鈕在最底部
 start_button = tk.Button(window, text="🚀 開始執行", command=start_bot)
-start_button.pack(pady=10)
+start_button.pack(pady=(10, 2))
+# === 預估時間顯示區塊 ===
+estimate_label = tk.Label(window, text="", bg="gray15", fg="lightblue", font=("Arial", 10))
+estimate_label.pack(pady=(0, 10))
+
+update_estimated_time()
 
 window.mainloop()
