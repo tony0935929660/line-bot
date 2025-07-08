@@ -6,9 +6,45 @@ import time
 from tkinter import filedialog
 from tkinter import messagebox
 from PIL import Image, ImageTk
+import cv2
+import pyautogui
+import numpy as np
+import mss
 
 image_refs = []
 paths = []
+
+def screenshot_all_monitors():
+    with mss.mss() as sct:
+        monitor = sct.monitors[0]  # monitors[0] 是全螢幕畫面（多螢幕合併）
+        sct_img = sct.grab(monitor)
+        img = np.array(sct_img)
+        return cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)  # 轉成灰階
+
+def check_is_extend():
+    template = cv2.imread("line-extend.png", cv2.IMREAD_GRAYSCALE)
+    if template is None:
+        print("❌ 無法讀取模板圖：line-extend.png")
+        return None  # 用 Python 合法的 null 寫法
+
+    screenshot_cv = screenshot_all_monitors()
+
+    # 嘗試多個縮放倍率來匹配 Retina / 非 Retina 顯示差異
+    scale_list = [0.75, 0.9, 1.0, 1.1, 1.25]
+    threshold = 0.80
+
+    for scale in scale_list:
+        resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
+        res = cv2.matchTemplate(screenshot_cv, resized_template, cv2.TM_CCOEFF_NORMED)
+        _, max_val, _, _ = cv2.minMaxLoc(res)
+
+        print(f"🧪 Scale: {scale:.2f} | Match confidence: {max_val:.4f}")
+        if max_val >= threshold:
+            print(f"✅ 找到模板！(scale={scale}, 信心={max_val:.3f})")
+            return True
+
+    print("❌ 未偵測到模板")
+    return False
 
 def center_window(window, width, height):
     screen_width = window.winfo_screenwidth()
@@ -80,7 +116,8 @@ def start_bot():
         count = int(count_entry.get())
         start = int(start_entry.get())
         sleep_time = float(time_entry.get())
-        is_expend = repeat_var.get()
+        # is_expend = repeat_var.get()
+        is_expend = check_is_extend()
         print(f"即將發送從第{start}開始發送：{msg}（次數：{count}）")
 
         start_button.config(state="disabled")
@@ -169,18 +206,21 @@ start_entry.insert(0, "1")
 start_entry.pack()
 
 # 建立 Boolean 變數
-repeat_var = tk.BooleanVar()
-repeat_var.set(False)  # 預設為未勾選（False）
+# repeat_var = tk.BooleanVar()
+# repeat_var.set(False)  # 預設為未勾選（False）
 
-# 加入 Checkbox
-tk.Checkbutton(
-    right_frame,
-    text="Line聊天室是否展開",
-    variable=repeat_var,
-    bg="gray15",
-    fg="white",
-    selectcolor="gray25"
-).pack(anchor="w", pady=(10, 5))
+# if (check_is_extend()):
+#     repeat_var = tk.BooleanVar(value=True)
+
+# # 加入 Checkbox
+# tk.Checkbutton(
+#     right_frame,
+#     text="Line聊天室是否展開",
+#     variable=repeat_var,
+#     bg="gray15",
+#     fg="white",
+#     selectcolor="gray25"
+# ).pack(anchor="w", pady=(10, 5))
 
 status_label = tk.Label(right_frame, text="", bg="gray15", fg="lightgreen")
 status_label.pack(pady=5)
