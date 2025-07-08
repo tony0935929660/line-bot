@@ -10,6 +10,24 @@ from PIL import Image, ImageTk
 image_refs = []
 paths = []
 
+def center_window(window, width, height):
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+    x = (screen_width - width) // 2
+    y = (screen_height - height) // 2
+    window.geometry(f"{width}x{height}+{x}+{y}")
+
+def open_finish_popup():
+    popup = tk.Toplevel()
+    popup.title("")
+    center_window(popup, 300, 120)
+    
+    label = tk.Label(popup, text="恭喜你，發送訊息完成！")
+    label.pack(pady=20)
+
+    close_btn = tk.Button(popup, text="關閉", command=popup.destroy)
+    close_btn.pack()
+
 def update_estimated_time(*args):
     try:
         count = int(count_entry.get())
@@ -74,6 +92,7 @@ def start_bot():
             run(msg, count, start, sleep_time, is_expend)
             progress_label.config(text="✅ 完成！")
             start_button.config(state="normal")
+            open_finish_popup()
 
         # ✅ 用 Thread 執行，避免卡住 UI
         threading.Thread(target=run_with_ui_update, daemon=True).start()
@@ -109,8 +128,8 @@ def upload_images():
 window = tk.Tk()
 window.iconbitmap("D:\Desktop\line-bot\shanlink_icon.ico")
 window.title("LINE 自動發送工具")
-window.geometry("600x600")
 window.configure(bg="gray15")
+center_window(window, 600, 600)
 
 # === 驗證函數 ===
 intcmd = (window.register(lambda P: P.isdigit() or P == ""), "%P")
