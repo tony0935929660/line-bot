@@ -137,12 +137,6 @@ def start_bot():
         print("❌ 使用者取消送出")
 
 def upload_images():
-    # 清除前次圖片（如果有）
-    for widget in image_frame.winfo_children():
-        widget.destroy()
-    image_refs.clear()
-    paths.clear()
-
     file_paths = filedialog.askopenfilenames(
         title="選擇多張圖片",
         filetypes=[("Image Files", (".png", ".jpg", ".jpeg", ".gif"))]
@@ -154,12 +148,35 @@ def upload_images():
         img.thumbnail((150, 150))
         tk_img = ImageTk.PhotoImage(img)
 
-        # 建立 Label 顯示圖片
-        label = tk.Label(image_frame, image=tk_img, bg="gray15")
-        label.pack(side="left", padx=5, pady=5)
+        # 包在一個 frame 裡，這樣可以一起刪除
+        container = tk.Frame(image_frame, bg="gray15")
+        container.pack(side="left", padx=5, pady=5)
 
-        image_refs.append(tk_img)  # 儲存參考避免被回收
+        # 顯示圖片
+        label = tk.Label(container, image=tk_img, bg="gray15")
+        label.pack()
+
+        # 儲存圖片引用和路徑
+        image_refs.append(tk_img)
         paths.append(path)
+
+        def delete_image(p=path, c=container):
+            if p in paths:
+                idx = paths.index(p)
+                paths.pop(idx)
+                image_refs.pop(idx)
+                c.destroy()
+
+        # 刪除按鈕
+        del_btn = tk.Button(
+            container,
+            text="🗑️ 刪除",
+            command=delete_image,
+            bg="gray10",
+            fg="white",
+            font=("Arial", 9)
+        )
+        del_btn.pack(pady=2)
 
 # === 主視窗設定 ===
 window = tk.Tk()
