@@ -68,7 +68,7 @@ def update_estimated_time(*args):
     try:
         count = int(count_entry.get())
         sleep_time = float(time_entry.get())
-        estimate_seconds = (1.1 + (sleep_time * 5)) * count  # 預估每次動作進出約兩倍延遲
+        estimate_seconds = (1.1 + (sleep_time * (5 + len(paths)))) * count  # 預估每次動作進出約兩倍延遲
         estimate_label.config(text=f"預估時間：約 {estimate_seconds:.1f} 秒")
     except:
         estimate_label.config(text="預估時間：-")
@@ -92,6 +92,7 @@ def send(msg, sleep_time, is_expend):
     time.sleep(sleep_time)
     
 def run(msg, count, start, sleep_time, is_expend):
+    estimate_label.config(text="")
     x, y = act.get_first_chatroom_position()
     act.click_at_position(x, y)
     if is_expend:
@@ -141,7 +142,6 @@ def upload_images():
         title="選擇多張圖片",
         filetypes=[("Image Files", (".png", ".jpg", ".jpeg", ".gif"))]
     )
-
     for path in file_paths:
         # 建立縮圖
         img = Image.open(path)
@@ -166,6 +166,7 @@ def upload_images():
                 paths.pop(idx)
                 image_refs.pop(idx)
                 c.destroy()
+            update_estimated_time()
 
         # 刪除按鈕
         del_btn = tk.Button(
@@ -177,6 +178,7 @@ def upload_images():
             font=("Arial", 9)
         )
         del_btn.pack(pady=2)
+    update_estimated_time()
 
 # === 主視窗設定 ===
 window = tk.Tk()
