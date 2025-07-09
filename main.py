@@ -9,7 +9,7 @@ from PIL import Image, ImageTk
 import cv2
 import pyautogui
 import numpy as np
-import mss
+from functools import partial
 
 image_refs = []
 paths = []
@@ -163,21 +163,26 @@ def upload_images():
         def delete_image(p=path, c=container):
             if p in paths:
                 idx = paths.index(p)
+                print(f"刪除 index: {idx}, path: {p}")
                 paths.pop(idx)
                 image_refs.pop(idx)
                 c.destroy()
+            print("剩下圖片數量:", len(paths))
             update_estimated_time()
 
-        # 刪除按鈕
-        del_btn = tk.Button(
-            container,
-            text="🗑️ 刪除",
-            command=delete_image,
-            bg="gray10",
-            fg="white",
-            font=("Arial", 9)
-        )
-        del_btn.pack(pady=2)
+        # === 用 Canvas 畫圓形 ❌ 按鈕，置於右上角 ===
+        canvas = tk.Canvas(container, width=24, height=24, bg="gray15", highlightthickness=0)
+        canvas.place(relx=1.0, rely=0.0, anchor="ne")
+
+        # 畫紅色圓圈（背景圓）
+        circle = canvas.create_oval(2, 2, 22, 22, fill="red", outline="red")
+
+        # 加上白色 ❌ 文字
+        cross = canvas.create_text(12, 12, text="✕", fill="white", font=("Arial", 15, "bold"))
+
+        # 綁定點擊事件到圓圈與文字上
+        canvas.tag_bind(circle, "<Button-1>", lambda e, p=path, c=container: delete_image(p, c))
+        canvas.tag_bind(cross, "<Button-1>", lambda e, p=path, c=container: delete_image(p, c))
     update_estimated_time()
 
 # === 主視窗設定 ===
