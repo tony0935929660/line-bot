@@ -9,6 +9,7 @@ from PIL import Image, ImageTk
 import cv2
 import pyautogui
 import numpy as np
+import mss
 from functools import partial
 
 image_refs = []
@@ -57,6 +58,11 @@ def open_finish_popup():
     popup = tk.Toplevel()
     popup.title("")
     center_window(popup, 300, 120)
+
+    # === 重點：讓視窗跳到最上層並取得焦點 ===
+    popup.attributes("-topmost", True)
+    popup.grab_set()         # 鎖定輸入焦點
+    popup.focus_force()      # 強制聚焦
     
     label = tk.Label(popup, text="恭喜你，發送訊息完成！")
     label.pack(pady=20)
