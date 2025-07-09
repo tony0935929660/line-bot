@@ -181,7 +181,7 @@ def upload_images():
 # === 主視窗設定 ===
 window = tk.Tk()
 window.iconbitmap("D:\Desktop\line-bot\shanlink_icon.ico")
-window.title("LINE 自動發送工具")
+window.title("山林 LINE 自動發送工具")
 window.configure(bg="gray15")
 center_window(window, 600, 600)
 
