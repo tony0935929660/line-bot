@@ -95,7 +95,7 @@ def send(msg, sleep_time, is_expend):
     time.sleep(sleep_time)
     if not is_expend:
         act.leave()
-    time.sleep(sleep_time)
+        time.sleep(sleep_time)
     
 def run(msg, count, start, sleep_time, is_expend):
     estimate_label.config(text="")
@@ -225,10 +225,19 @@ count_entry.pack()
 count_entry.bind("<KeyRelease>", update_estimated_time)
 
 tk.Label(right_frame, text="延遲時間：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
-time_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=floatcmd)
-time_entry.insert(0, "0.5")
+
+delay_options = ["0.25", "0.5", "0.75", "1"]
+delay_var = tk.StringVar(value="0.5")
+
+time_entry = ttk.Combobox(
+    right_frame,
+    textvariable=delay_var,
+    values=delay_options,
+    width=28,
+    state="readonly"
+)
 time_entry.pack()
-time_entry.bind("<KeyRelease>", update_estimated_time)
+time_entry.bind("<<ComboboxSelected>>", update_estimated_time)
 
 tk.Label(right_frame, text="起始位置：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
 start_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
