@@ -23,7 +23,7 @@ def screenshot_all_monitors():
         return cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)  # 轉成灰階
 
 def check_is_extend():
-    template = cv2.imread("line-extend.png", cv2.IMREAD_GRAYSCALE)
+    template = cv2.imread("wins-line-extend.png", cv2.IMREAD_GRAYSCALE)
     if template is None:
         print("❌ 無法讀取模板圖：line-extend.png")
         return None  # 用 Python 合法的 null 寫法
