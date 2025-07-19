@@ -12,8 +12,7 @@ import numpy as np
 import mss
 from functools import partial
 
-image_refs = []
-paths = []
+images = []
 
 def screenshot_all_monitors():
     with mss.mss() as sct:
@@ -74,7 +73,7 @@ def update_estimated_time(*args):
     try:
         count = int(count_entry.get())
         sleep_time = float(time_entry.get())
-        estimate_seconds = (1.1 + (sleep_time * (5 + len(paths)))) * count  # 預估每次動作進出約兩倍延遲
+        estimate_seconds = (1.1 + (sleep_time * (5 + len(images)))) * count  # 預估每次動作進出約兩倍延遲
         estimate_label.config(text=f"預估時間：約 {estimate_seconds:.1f} 秒")
     except:
         estimate_label.config(text="預估時間：-")
@@ -86,8 +85,8 @@ def send(msg, sleep_time, is_expend):
     time.sleep(sleep_time)
     act.paste()
     time.sleep(sleep_time)
-    for path in paths:
-        act.copy_image(path)
+    for item in images:
+        act.copy_image(item['path'])
         time.sleep(sleep_time)
         act.paste()
         time.sleep(sleep_time)
@@ -108,6 +107,7 @@ def run(msg, count, start, sleep_time, is_expend):
         index = i + start - 1
         for j in range(index):
             act.click_down_arrow()
+            time.sleep(0.1)
         send(msg, sleep_time, is_expend)
         # === 更新進度條 ===
         percent = ((i + 1) / count) * 100
@@ -162,18 +162,20 @@ def upload_images():
         label = tk.Label(container, image=tk_img, bg="gray15")
         label.pack()
 
-        # 儲存圖片引用和路徑
-        image_refs.append(tk_img)
-        paths.append(path)
+        images.append({
+            'path': path,
+            'tk_img': tk_img,
+            'container': container
+        })
 
         def delete_image(p=path, c=container):
-            if p in paths:
-                idx = paths.index(p)
-                print(f"刪除 index: {idx}, path: {p}")
-                paths.pop(idx)
-                image_refs.pop(idx)
-                c.destroy()
-            print("剩下圖片數量:", len(paths))
+            for i, item in enumerate(images):
+                if item['path'] == p and item['container'] == c:
+                    print(f"刪除 index: {i}, path: {p}")
+                    images.pop(i)
+                    c.destroy()
+                    break
+            print("剩下圖片數量:", len(images))
             update_estimated_time()
 
         # === 用 Canvas 畫圓形 ❌ 按鈕，置於右上角 ===
