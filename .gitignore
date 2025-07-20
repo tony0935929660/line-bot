@@ -21,3 +21,5 @@ __pycache__/
 
 # logs 或臨時資料（如果有）
 *.log
+
+.env
