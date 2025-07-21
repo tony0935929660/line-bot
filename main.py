@@ -17,6 +17,8 @@ from auth_server import start_flask_server, login_queue
 from urllib.parse import urlencode
 import webbrowser
 import queue
+import secrets
+import shared
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -101,19 +103,18 @@ def show_login_window():
     tk.Label(login_window, text="請先登入 LINE", bg="gray15", fg="white", font=("Arial", 12)).pack(pady=15)
 
     def open_line_login():
-        print("✅", os.getenv("LINE_REDIRECT_URI"))  # 應該會印出 http://localhost:5000/callback
-
+        shared.state = secrets.token_hex(16)
         query = {
             'response_type': 'code',
             'client_id': os.getenv("LINE_CHANNEL_ID"),
             'redirect_uri': os.getenv("LINE_REDIRECT_URI"),
-            'state': 'xyz123',
+            'state': shared.state,
             'scope': 'profile openid email'
         }
         auth_url = f"https://access.line.me/oauth2/v2.1/authorize?{urlencode(query)}"
         webbrowser.open_new(auth_url)
 
-    login_btn = tk.Button(login_window, text="🔑 使用 LINE 登入", command=open_line_login)
+    login_btn = tk.Button(login_window, text="LINE 登入", command=open_line_login)
     login_btn.pack(pady=10)
 
     status_label = tk.Label(login_window, text="", bg="gray15", fg="lightgreen")
@@ -138,14 +139,21 @@ def open_finish_popup():
     close_btn = tk.Button(popup, text="關閉", command=popup.destroy)
     close_btn.pack()
 
-def update_estimated_time(*args):
-    try:
-        count = int(count_entry.get())
-        sleep_time = float(time_entry.get())
-        estimate_seconds = (1.1 + (sleep_time * (5 + len(images)))) * count  # 預估每次動作進出約兩倍延遲
-        estimate_label.config(text=f"預估時間：約 {estimate_seconds:.1f} 秒")
-    except:
-        estimate_label.config(text="預估時間：-")
+def open_login_success_popup(profile):
+    popup = tk.Toplevel()
+    popup.title("登入成功")
+    center_window(popup, 300, 120)
+
+    # === 重點：讓視窗跳到最上層並取得焦點 ===
+    popup.attributes("-topmost", True)
+    popup.grab_set()         # 鎖定輸入焦點
+    popup.focus_force()      # 強制聚焦
+    
+    label = tk.Label(popup, text=f"{profile['displayName']}恭喜你，登入成功！")
+    label.pack(pady=20)
+
+    close_btn = tk.Button(popup, text="關閉", command=popup.destroy)
+    close_btn.pack()
 
 def send(msg, sleep_time, is_expend):
     act.enter()
@@ -264,12 +272,24 @@ def upload_images():
 
 def show_main_window(profile):
     global window
+
+    def update_estimated_time(*args):
+        try:
+            count = int(count_entry.get())
+            sleep_time = float(time_entry.get())
+            estimate_seconds = (1.1 + (sleep_time * (5 + len(images)))) * count  # 預估每次動作進出約兩倍延遲
+            estimate_label.config(text=f"預估時間：約 {estimate_seconds:.1f} 秒")
+        except:
+            estimate_label.config(text="預估時間：-")
+
     # === 主視窗設定 ===
     window = tk.Tk()
     window.iconbitmap(source_path("shanlink_icon.ico"))
     window.title("山林 LINE 自動發送工具")
     window.configure(bg="gray15")
     center_window(window, 600, 600)
+
+    open_login_success_popup(profile)
 
     # === 驗證函數 ===
     intcmd = (window.register(lambda P: P.isdigit() or P == ""), "%P")
@@ -342,7 +362,7 @@ def show_main_window(profile):
     bottom_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
     # 上傳圖片按鈕
-    tk.Button(bottom_frame, text="📤 上傳圖片", command=upload_images).pack(pady=(0, 5))
+    tk.Button(bottom_frame, text="上傳圖片", command=upload_images).pack(pady=(0, 5))
 
     # 預覽圖片框（可用來顯示縮圖）
     image_frame = tk.Frame(bottom_frame, bg="gray15", height=100)
@@ -357,7 +377,7 @@ def show_main_window(profile):
     progress_label.pack(pady=(0, 10))
 
     # 開始按鈕在最底部
-    start_button = tk.Button(window, text="🚀 開始執行", command=start_bot)
+    start_button = tk.Button(window, text="開始執行", command=start_bot)
     start_button.pack(pady=(10, 2))
     # === 預估時間顯示區塊 ===
     estimate_label = tk.Label(window, text="", bg="gray15", fg="lightblue", font=("Arial", 10))

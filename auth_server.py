@@ -3,6 +3,7 @@ from flask import Flask, request
 import requests, os
 from dotenv import load_dotenv
 from queue import Queue
+import shared
 
 load_dotenv()
 
@@ -12,11 +13,13 @@ login_queue = Queue()  # 共享給主程式使用
 LINE_CLIENT_ID = os.getenv("LINE_CHANNEL_ID")
 LINE_CLIENT_SECRET = os.getenv("LINE_CHANNEL_SECRET")
 REDIRECT_URI = os.getenv("LINE_REDIRECT_URI")
-print("Redirect URI loaded:", REDIRECT_URI)
+
 @app.route('/callback')
 def callback():
-    print(request.args)
     code = request.args.get('code')
+    received_state = request.args.get('state')
+    if received_state != shared.state:
+        return "CSRF detected!", 400
 
     # 交換 token
     token_res = requests.post(
@@ -40,7 +43,7 @@ def callback():
     # 放入 queue 傳回 Tkinter 主程式
     login_queue.put(profile_res)
 
-    return "<h1>登入成功！請返回應用程式</h1>"
+    return "<h1>恭喜登入成功！請返回應用程式</h1>"
 
 def start_flask_server():
     app.run(port=5000)
