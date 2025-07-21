@@ -24,19 +24,36 @@ load_dotenv()
 
 images = []
 
-def source_path(relative_path: str) -> str:
-    """
-    回傳正確的資源路徑，無論是在開發階段還是 PyInstaller 打包後
-    - relative_path: 相對於專案或 dist 目錄的檔案路徑
-    """
+def debug_show_matching(res, template, screenshot, scale, max_val, threshold):
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+    print(f"🧪 測試視覺圖 | scale={scale:.2f} | max_val={max_val:.4f}")
+
+    # 畫出匹配位置
+    h, w = template.shape
+    top_left = max_loc
+    bottom_right = (top_left[0] + w, top_left[1] + h)
+    matched_img = cv2.cvtColor(screenshot.copy(), cv2.COLOR_GRAY2BGR)
+    cv2.rectangle(matched_img, top_left, bottom_right, (0, 255, 0), 2)
+
+    # 顯示圖片
+    cv2.imshow(f'Match scale={scale}', matched_img)
+    cv2.imshow('Template', template)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+def source_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller."""
     try:
-        # PyInstaller 打包後會有 sys._MEIPASS
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except AttributeError:
-        # 開發階段：回到目前這支 .py 所在資料夾
         base_path = os.path.abspath(".")
 
-    return os.path.join(base_path, relative_path)
+    abs_path = os.path.join(base_path, relative_path)
+    if not os.path.exists(abs_path):
+        print(f"❌ 資源檔案找不到: {abs_path}")
+    return abs_path
 
 def screenshot_all_monitors():
     with mss.mss() as sct:
@@ -45,29 +62,44 @@ def screenshot_all_monitors():
         img = np.array(sct_img)
         return cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)  # 轉成灰階
 
+def preprocess_for_matching(img):
+    if img.ndim == 3:  # 彩色圖
+        gray = cv2.cvtColor(img, cv2.COLOR_BGRA2GRAY)
+    else:
+        gray = img
+    # 邊緣化忽略顏色、光照等影響
+    edge = cv2.Canny(gray, 50, 200)
+    return edge
+
 def check_is_extend():
-    template = cv2.imread(source_path("wins-line-extend.png"), cv2.IMREAD_GRAYSCALE)
-    if template is None:
-        print("❌ 無法讀取模板圖：line-extend.png")
-        return None  # 用 Python 合法的 null 寫法
-
     screenshot_cv = screenshot_all_monitors()
-
-    # 嘗試多個縮放倍率來匹配 Retina / 非 Retina 顯示差異
     scale_list = [0.75, 0.9, 1.0, 1.1, 1.25]
-    threshold = 0.80
+    threshold = 0.7
 
-    for scale in scale_list:
-        resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
-        res = cv2.matchTemplate(screenshot_cv, resized_template, cv2.TM_CCOEFF_NORMED)
-        _, max_val, _, _ = cv2.minMaxLoc(res)
+    template_paths = [
+        source_path("wins-line-extend.png"),
+        source_path("wins-line-extend-dark.png"),
+    ]
 
-        print(f"🧪 Scale: {scale:.2f} | Match confidence: {max_val:.4f}")
-        if max_val >= threshold:
-            print(f"✅ 找到模板！(scale={scale}, 信心={max_val:.3f})")
-            return True
+    for template_path in template_paths:
+        template = cv2.imread(template_path, cv2.IMREAD_GRAYSCALE)
+        if template is None:
+            print(f"⚠️ 找不到模板圖：{template_path}")
+            continue
 
-    print("❌ 未偵測到模板")
+        print(f"🔍 嘗試模板：{template_path}")
+
+        for scale in scale_list:
+            resized_template = cv2.resize(template, (0, 0), fx=scale, fy=scale)
+            res = cv2.matchTemplate(screenshot_cv, resized_template, cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, _ = cv2.minMaxLoc(res)
+
+            print(f"  🧪 Scale: {scale:.2f} | Match confidence: {max_val:.4f}")
+            if max_val >= threshold:
+                print(f"✅ 成功匹配模板 {template_path}！(scale={scale}, 信心={max_val:.3f})")
+                return True
+
+    print("❌ 未偵測到任何模板")
     return False
 
 def center_window(window, width, height):
@@ -172,103 +204,6 @@ def send(msg, sleep_time, is_expend):
     if not is_expend:
         act.leave()
         time.sleep(sleep_time)
-    
-def run(msg, count, start, sleep_time, is_expend):
-    estimate_label.config(text="")
-    x, y = act.get_first_chatroom_position()
-    act.click_at_position(x, y)
-    if is_expend:
-        x, y = act.get_input_position()
-        act.click_at_position(x, y)
-    for i in range(count):
-        index = i + start - 1
-        for j in range(index):
-            act.click_down_arrow()
-            time.sleep(0.1)
-        send(msg, sleep_time, is_expend)
-        # === 更新進度條 ===
-        percent = ((i + 1) / count) * 100
-        progress_var.set(percent)
-        progress_label.config(text=f"進度：{int(percent)}%({i+1}/{count})")
-        window.update_idletasks()
-
-def start_bot():
-    confirm = messagebox.askyesno("確認送出", "你確定要送出資料嗎？")
-    if confirm:
-        print("✅ 使用者確認送出")
-        msg = message_entry.get("1.0", "end-1c")
-        count = int(count_entry.get())
-        start = int(start_entry.get())
-        sleep_time = float(time_entry.get())
-        # is_expend = repeat_var.get()
-        is_expend = check_is_extend()
-        print(f"即將發送從第{start}開始發送：{msg}（次數：{count}）")
-
-        start_button.config(state="disabled")
-        progress_var.set(0)
-        progress_label.config(text="進度：0%")
-        window.update_idletasks()
-
-        def run_with_ui_update():
-            run(msg, count, start, sleep_time, is_expend)
-            progress_label.config(text="✅ 完成！")
-            start_button.config(state="normal")
-            open_finish_popup()
-
-        # ✅ 用 Thread 執行，避免卡住 UI
-        threading.Thread(target=run_with_ui_update, daemon=True).start()
-    else:
-        print("❌ 使用者取消送出")
-
-def upload_images():
-    file_paths = filedialog.askopenfilenames(
-        title="選擇多張圖片",
-        filetypes=[("Image Files", (".png", ".jpg", ".jpeg", ".gif"))]
-    )
-    for path in file_paths:
-        # 建立縮圖
-        img = Image.open(path)
-        img.thumbnail((150, 150))
-        tk_img = ImageTk.PhotoImage(img)
-
-        # 包在一個 frame 裡，這樣可以一起刪除
-        container = tk.Frame(image_frame, bg="gray15")
-        container.pack(side="left", padx=5, pady=5)
-
-        # 顯示圖片
-        label = tk.Label(container, image=tk_img, bg="gray15")
-        label.pack()
-
-        images.append({
-            'path': path,
-            'tk_img': tk_img,
-            'container': container
-        })
-
-        def delete_image(p=path, c=container):
-            for i, item in enumerate(images):
-                if item['path'] == p and item['container'] == c:
-                    print(f"刪除 index: {i}, path: {p}")
-                    images.pop(i)
-                    c.destroy()
-                    break
-            print("剩下圖片數量:", len(images))
-            update_estimated_time()
-
-        # === 用 Canvas 畫圓形 ❌ 按鈕，置於右上角 ===
-        canvas = tk.Canvas(container, width=24, height=24, bg="gray15", highlightthickness=0)
-        canvas.place(relx=1.0, rely=0.0, anchor="ne")
-
-        # 畫紅色圓圈（背景圓）
-        circle = canvas.create_oval(2, 2, 22, 22, fill="red", outline="red")
-
-        # 加上白色 ❌ 文字
-        cross = canvas.create_text(12, 12, text="✕", fill="white", font=("Arial", 15, "bold"))
-
-        # 綁定點擊事件到圓圈與文字上
-        canvas.tag_bind(circle, "<Button-1>", lambda e, p=path, c=container: delete_image(p, c))
-        canvas.tag_bind(cross, "<Button-1>", lambda e, p=path, c=container: delete_image(p, c))
-    update_estimated_time()
 
 def show_main_window(profile):
     global window
@@ -282,6 +217,102 @@ def show_main_window(profile):
         except:
             estimate_label.config(text="預估時間：-")
 
+    def run(msg, count, start, sleep_time, is_expend):
+        estimate_label.config(text="")
+        x, y = act.get_first_chatroom_position()
+        act.click_at_position(x, y)
+        if is_expend:
+            x, y = act.get_input_position()
+            act.click_at_position(x, y)
+        for i in range(count):
+            index = i + start - 1
+            for j in range(index):
+                act.click_down_arrow()
+                time.sleep(0.1)
+            send(msg, sleep_time, is_expend)
+            # === 更新進度條 ===
+            percent = ((i + 1) / count) * 100
+            progress_var.set(percent)
+            progress_label.config(text=f"進度：{int(percent)}%({i+1}/{count})")
+            window.update_idletasks()
+
+    def start_bot():
+        confirm = messagebox.askyesno("確認送出", "你確定要送出資料嗎？")
+        if confirm:
+            print("✅ 使用者確認送出")
+            msg = message_entry.get("1.0", "end-1c")
+            count = int(count_entry.get())
+            start = int(start_entry.get())
+            sleep_time = float(time_entry.get())
+            # is_expend = repeat_var.get()
+            is_expend = check_is_extend()
+            print(f"即將發送從第{start}開始發送：{msg}（次數：{count}）")
+
+            start_button.config(state="disabled")
+            progress_var.set(0)
+            progress_label.config(text="進度：0%")
+            window.update_idletasks()
+
+            def run_with_ui_update():
+                run(msg, count, start, sleep_time, is_expend)
+                progress_label.config(text="✅ 完成！")
+                start_button.config(state="normal")
+                open_finish_popup()
+
+            # ✅ 用 Thread 執行，避免卡住 UI
+            threading.Thread(target=run_with_ui_update, daemon=True).start()
+        else:
+            print("❌ 使用者取消送出")
+
+    def upload_images():
+        file_paths = filedialog.askopenfilenames(
+            title="選擇多張圖片",
+            filetypes=[("Image Files", (".png", ".jpg", ".jpeg", ".gif"))]
+        )
+        for path in file_paths:
+            # 建立縮圖
+            img = Image.open(path)
+            img.thumbnail((150, 150))
+            tk_img = ImageTk.PhotoImage(img)
+
+            # 包在一個 frame 裡，這樣可以一起刪除
+            container = tk.Frame(image_frame, bg="gray15")
+            container.pack(side="left", padx=5, pady=5)
+
+            # 顯示圖片
+            label = tk.Label(container, image=tk_img, bg="gray15")
+            label.pack()
+
+            images.append({
+                'path': path,
+                'tk_img': tk_img,
+                'container': container
+            })
+
+            def delete_image(p=path, c=container):
+                for i, item in enumerate(images):
+                    if item['path'] == p and item['container'] == c:
+                        print(f"刪除 index: {i}, path: {p}")
+                        images.pop(i)
+                        c.destroy()
+                        break
+                print("剩下圖片數量:", len(images))
+                update_estimated_time()
+
+            # === 用 Canvas 畫圓形 ❌ 按鈕，置於右上角 ===
+            canvas = tk.Canvas(container, width=24, height=24, bg="gray15", highlightthickness=0)
+            canvas.place(relx=1.0, rely=0.0, anchor="ne")
+
+            # 畫紅色圓圈（背景圓）
+            circle = canvas.create_oval(2, 2, 22, 22, fill="red", outline="red")
+
+            # 加上白色 ❌ 文字
+            cross = canvas.create_text(12, 12, text="✕", fill="white", font=("Arial", 15, "bold"))
+
+            # 綁定點擊事件到圓圈與文字上
+            canvas.tag_bind(circle, "<Button-1>", lambda e, p=path, c=container: delete_image(p, c))
+            canvas.tag_bind(cross, "<Button-1>", lambda e, p=path, c=container: delete_image(p, c))
+            update_estimated_time()
     # === 主視窗設定 ===
     window = tk.Tk()
     window.iconbitmap(source_path("shanlink_icon.ico"))
