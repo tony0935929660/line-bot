@@ -13,12 +13,13 @@ import mss
 from functools import partial
 import os
 import sys
-from auth_server import start_flask_server, login_queue
+# from auth_server import start_flask_server, login_queue
 from urllib.parse import urlencode
 import webbrowser
 import queue
 import secrets
 import shared
+import requests
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -109,20 +110,20 @@ def center_window(window, width, height):
     y = (screen_height - height) // 2
     window.geometry(f"{width}x{height}+{x}+{y}")
 
-def poll_login_queue():
-    global login_btn
-    try:
-        profile = login_queue.get_nowait()
-    except queue.Empty:
-        login_window.after(1000, poll_login_queue)
-    else:
-        display_name = profile.get("displayName", "未知使用者")
-        status_label.config(text=f"🎉 已登入：{display_name}")
-        login_btn.config(state="disabled")
+# def poll_login_queue():
+#     global login_btn
+#     try:
+#         profile = login_queue.get_nowait()
+#     except queue.Empty:
+#         login_window.after(1000, poll_login_queue)
+#     else:
+#         display_name = profile.get("displayName", "未知使用者")
+#         status_label.config(text=f"🎉 已登入：{display_name}")
+#         login_btn.config(state="disabled")
 
-        # 關閉登入視窗，打開主畫面
-        login_window.destroy()
-        show_main_window(profile)
+#         # 關閉登入視窗，打開主畫面
+#         login_window.destroy()
+#         show_main_window(profile)
 
 def show_login_window():
     global login_window, login_btn, status_label
@@ -134,17 +135,20 @@ def show_login_window():
 
     tk.Label(login_window, text="請先登入 LINE", bg="gray15", fg="white", font=("Arial", 12)).pack(pady=15)
 
+    # def open_line_login():
+    #     shared.state = secrets.token_hex(16)
+    #     query = {
+    #         'response_type': 'code',
+    #         'client_id': os.getenv("LINE_CHANNEL_ID"),
+    #         'redirect_uri': os.getenv("LINE_REDIRECT_URI"),
+    #         'state': shared.state,
+    #         'scope': 'profile openid email'
+    #     }
+    #     auth_url = f"https://access.line.me/oauth2/v2.1/authorize?{urlencode(query)}"
+    #     webbrowser.open_new(auth_url)
+
     def open_line_login():
-        shared.state = secrets.token_hex(16)
-        query = {
-            'response_type': 'code',
-            'client_id': os.getenv("LINE_CHANNEL_ID"),
-            'redirect_uri': os.getenv("LINE_REDIRECT_URI"),
-            'state': shared.state,
-            'scope': 'profile openid email'
-        }
-        auth_url = f"https://access.line.me/oauth2/v2.1/authorize?{urlencode(query)}"
-        webbrowser.open_new(auth_url)
+        webbrowser.open_new("https://shanlink.tech/api/AccountApi/LineLogin")
 
     login_btn = tk.Button(login_window, text="LINE 登入", command=open_line_login)
     login_btn.pack(pady=10)
@@ -152,7 +156,7 @@ def show_login_window():
     status_label = tk.Label(login_window, text="", bg="gray15", fg="lightgreen")
     status_label.pack()
 
-    poll_login_queue()
+    # poll_login_queue()
     login_window.mainloop()
 
 def open_finish_popup():
@@ -419,5 +423,5 @@ def show_main_window(profile):
     window.mainloop()
 
 if __name__ == "__main__":
-    threading.Thread(target=start_flask_server, daemon=True).start()
+    # threading.Thread(target=start_flask_server, daemon=True).start()
     show_login_window()
