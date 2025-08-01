@@ -13,7 +13,7 @@ import mss
 from functools import partial
 import os
 import sys
-# from auth_server import start_flask_server, login_queue
+from auth_server import start_flask_server, login_queue
 from urllib.parse import urlencode
 import webbrowser
 import queue
@@ -110,20 +110,20 @@ def center_window(window, width, height):
     y = (screen_height - height) // 2
     window.geometry(f"{width}x{height}+{x}+{y}")
 
-# def poll_login_queue():
-#     global login_btn
-#     try:
-#         profile = login_queue.get_nowait()
-#     except queue.Empty:
-#         login_window.after(1000, poll_login_queue)
-#     else:
-#         display_name = profile.get("displayName", "未知使用者")
-#         status_label.config(text=f"🎉 已登入：{display_name}")
-#         login_btn.config(state="disabled")
+def poll_login_queue():
+    global login_btn
+    try:
+        profile = login_queue.get_nowait()
+    except queue.Empty:
+        login_window.after(1000, poll_login_queue)
+    else:
+        display_name = profile.get("lineUserName", "未知使用者")
+        status_label.config(text=f"🎉 已登入：{display_name}")
+        login_btn.config(state="disabled")
 
-#         # 關閉登入視窗，打開主畫面
-#         login_window.destroy()
-#         show_main_window(profile)
+        # 關閉登入視窗，打開主畫面
+        login_window.destroy()
+        show_main_window(profile)
 
 def show_login_window():
     global login_window, login_btn, status_label
@@ -135,20 +135,17 @@ def show_login_window():
 
     tk.Label(login_window, text="請先登入 LINE", bg="gray15", fg="white", font=("Arial", 12)).pack(pady=15)
 
-    # def open_line_login():
-    #     shared.state = secrets.token_hex(16)
-    #     query = {
-    #         'response_type': 'code',
-    #         'client_id': os.getenv("LINE_CHANNEL_ID"),
-    #         'redirect_uri': os.getenv("LINE_REDIRECT_URI"),
-    #         'state': shared.state,
-    #         'scope': 'profile openid email'
-    #     }
-    #     auth_url = f"https://access.line.me/oauth2/v2.1/authorize?{urlencode(query)}"
-    #     webbrowser.open_new(auth_url)
-
     def open_line_login():
-        webbrowser.open_new("https://shanlink.tech/api/AccountApi/LineLogin")
+        shared.state = secrets.token_hex(16)
+        query = {
+            'response_type': 'code',
+            'client_id': os.getenv("LINE_CHANNEL_ID"),
+            'redirect_uri': os.getenv("LINE_REDIRECT_URI"),
+            'state': shared.state,
+            'scope': 'profile openid email'
+        }
+        auth_url = f"https://access.line.me/oauth2/v2.1/authorize?{urlencode(query)}"
+        webbrowser.open_new(auth_url)
 
     login_btn = tk.Button(login_window, text="LINE 登入", command=open_line_login)
     login_btn.pack(pady=10)
@@ -156,7 +153,7 @@ def show_login_window():
     status_label = tk.Label(login_window, text="", bg="gray15", fg="lightgreen")
     status_label.pack()
 
-    # poll_login_queue()
+    poll_login_queue()
     login_window.mainloop()
 
 def open_finish_popup():
@@ -175,6 +172,28 @@ def open_finish_popup():
     close_btn = tk.Button(popup, text="關閉", command=popup.destroy)
     close_btn.pack()
 
+def open_unpaid_popup():
+    popup = tk.Toplevel()
+    popup.title("")
+    center_window(popup, 350, 120)
+
+    # === 重點：讓視窗跳到最上層並取得焦點 ===
+    popup.attributes("-topmost", True)
+    popup.grab_set()         # 鎖定輸入焦點
+    popup.focus_force()      # 強制聚焦
+    
+    label = tk.Label(
+        popup,
+        text="您未開啟服務，請至官方LINE購買金鑰開啟服務！\n如果已開啟服務，請重新登入",
+        font=("Arial", 12),
+        wraplength=310, # 這裡設定一個您希望的寬度，單位為像素
+        justify=tk.CENTER # 設定對齊方式，可選 tk.CENTER, tk.RIGHT
+    )
+    label.pack(pady=20, padx=20)
+
+    close_btn = tk.Button(popup, text="關閉", command=popup.destroy)
+    close_btn.pack()
+
 def open_login_success_popup(profile):
     popup = tk.Toplevel()
     popup.title("登入成功")
@@ -185,7 +204,7 @@ def open_login_success_popup(profile):
     popup.grab_set()         # 鎖定輸入焦點
     popup.focus_force()      # 強制聚焦
     
-    label = tk.Label(popup, text=f"{profile['displayName']}恭喜你，登入成功！")
+    label = tk.Label(popup, text=f"{profile['lineUserName']}恭喜你，登入成功！")
     label.pack(pady=20)
 
     close_btn = tk.Button(popup, text="關閉", command=popup.destroy)
@@ -240,7 +259,11 @@ def show_main_window(profile):
             progress_label.config(text=f"進度：{int(percent)}%({i+1}/{count})")
             window.update_idletasks()
 
-    def start_bot():
+    def start_bot(profile):
+        if (profile['enable'] != True):
+            open_unpaid_popup()
+            return
+
         confirm = messagebox.askyesno("確認送出", "你確定要送出資料嗎？")
         if confirm:
             print("✅ 使用者確認送出")
@@ -412,7 +435,7 @@ def show_main_window(profile):
     progress_label.pack(pady=(0, 10))
 
     # 開始按鈕在最底部
-    start_button = tk.Button(window, text="開始執行", command=start_bot)
+    start_button = tk.Button(window, text="開始執行", command=lambda: start_bot(profile))
     start_button.pack(pady=(10, 2))
     # === 預估時間顯示區塊 ===
     estimate_label = tk.Label(window, text="", bg="gray15", fg="lightblue", font=("Arial", 10))
@@ -423,5 +446,5 @@ def show_main_window(profile):
     window.mainloop()
 
 if __name__ == "__main__":
-    # threading.Thread(target=start_flask_server, daemon=True).start()
+    threading.Thread(target=start_flask_server, daemon=True).start()
     show_login_window()
