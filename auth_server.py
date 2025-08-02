@@ -55,12 +55,12 @@ def login(accessToken):
         # 放入 queue 傳回 Tkinter 主程式
         login_queue.put(profile_res['user'])
 
-        return "<h1>恭喜登入成功！請返回應用程式</h1>"
+        return redirect("https://www.shanlink.tech/success")
 
     except requests.exceptions.RequestException as e:
         print("請求失敗:", e)
         
-        return redirect("https://shanlink.tech")
+        return redirect("https://www.shanlink.tech/fail")
 
 def start_flask_server():
     app.run(port=5000)
