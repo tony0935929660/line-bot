@@ -10,9 +10,9 @@ load_dotenv()
 app = Flask(__name__)
 login_queue = Queue()  # 共享給主程式使用
 
-LINE_CLIENT_ID = os.getenv("LINE_CHANNEL_ID")
-LINE_CLIENT_SECRET = os.getenv("LINE_CHANNEL_SECRET")
-REDIRECT_URI = os.getenv("LINE_REDIRECT_URI")
+LINE_CLIENT_ID = "2007740858"
+LINE_CLIENT_SECRET = "183fc88006f67a1e169cef89c4494432"
+REDIRECT_URI = "http://127.0.0.1:5000/callback"
 
 @app.route('/callback')
 def callback():

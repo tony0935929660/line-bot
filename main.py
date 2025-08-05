@@ -139,8 +139,8 @@ def show_login_window():
         shared.state = secrets.token_hex(16)
         query = {
             'response_type': 'code',
-            'client_id': os.getenv("LINE_CHANNEL_ID"),
-            'redirect_uri': os.getenv("LINE_REDIRECT_URI"),
+            'client_id': "2007740858",
+            'redirect_uri': "http://127.0.0.1:5000/callback",
             'state': shared.state,
             'scope': 'profile openid email'
         }
