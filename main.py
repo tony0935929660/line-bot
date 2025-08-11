@@ -35,13 +35,15 @@ def press_down_arrow_and_verify():
     
     # 步驟 1: 第一次模擬按下方向鍵下
     print("第一次嘗試按下方向鍵下...")
-    pyautogui.press("down")
-    time.sleep(0.5)  # 等待一小段時間，確保輸入法有時間反應
+    act.click_down_arrow()
+    time.sleep(0.2)  # 等待一小段時間，確保輸入法有時間反應
     
     # 步驟 2: 模擬複製
     print("正在模擬複製操作...")
+    pyautogui.hotkey('ctrl', 'a')
+    time.sleep(0.2)
     pyautogui.hotkey('ctrl', 'c')
-    time.sleep(0.5)  # 等待一小段時間，確保內容已複製到剪貼簿
+    time.sleep(0.2)  # 等待一小段時間，確保內容已複製到剪貼簿
     
     # 步驟 3: 檢查剪貼簿內容
     try:
@@ -52,9 +54,11 @@ def press_down_arrow_and_verify():
         if clipboard_content == '2':
             print("偵測到剪貼簿內容為 '2'，表示輸入法作用中。")
             
-            pyautogui.press("shift")
+            pyautogui.hotkey('alt', 'shift')
         else:
             print("剪貼簿內容不是 '2'，第一次嘗試成功。")
+
+            act.click_up_arrow()
     except pyperclip.PyperclipException:
         print("無法訪問剪貼簿，請確認程式是否有權限。")
     except Exception as e:
@@ -282,10 +286,9 @@ def show_main_window(profile):
         if is_expend:
             x, y = act.get_input_position()
             act.click_at_position(x, y)
+        press_down_arrow_and_verify()
         for i in range(count):
             index = i + start - 1
-            if (i == 1):
-                press_down_arrow_and_verify()
             for j in range(index):
                 act.click_down_arrow()
                 time.sleep(0.1)
