@@ -24,6 +24,9 @@ def click_down_arrow():
 def click_up_arrow():
     pyautogui.press("up")
 
+def click_delete():
+    pyautogui.press("delete")
+
 def click_tab():
     pyautogui.press("tab")
 

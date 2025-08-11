@@ -55,9 +55,9 @@ def press_down_arrow_and_verify():
             print("偵測到剪貼簿內容為 '2'，表示輸入法作用中。")
             
             pyautogui.hotkey('alt', 'shift')
+            act.click_delete()
         else:
             print("剪貼簿內容不是 '2'，第一次嘗試成功。")
-
             act.click_up_arrow()
     except pyperclip.PyperclipException:
         print("無法訪問剪貼簿，請確認程式是否有權限。")
