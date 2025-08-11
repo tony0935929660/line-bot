@@ -8,6 +8,7 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 import cv2
 import pyautogui
+import pyperclip
 import numpy as np
 import mss
 from functools import partial
@@ -24,6 +25,40 @@ from dotenv import load_dotenv
 load_dotenv()
 
 images = []
+
+def press_down_arrow_and_verify():
+    """
+    實作你的邏輯：先嘗試按方向鍵下，若結果是 '2'，則切換輸入法再試一次。
+    """
+    # 確保剪貼簿是空的，避免舊內容干擾判斷
+    pyperclip.copy("")
+    
+    # 步驟 1: 第一次模擬按下方向鍵下
+    print("第一次嘗試按下方向鍵下...")
+    pyautogui.press("down")
+    time.sleep(0.5)  # 等待一小段時間，確保輸入法有時間反應
+    
+    # 步驟 2: 模擬複製
+    print("正在模擬複製操作...")
+    pyautogui.hotkey('ctrl', 'c')
+    time.sleep(0.5)  # 等待一小段時間，確保內容已複製到剪貼簿
+    
+    # 步驟 3: 檢查剪貼簿內容
+    try:
+        clipboard_content = pyperclip.paste()
+        print(f"剪貼簿內容為: '{clipboard_content}'")
+        
+        # 步驟 4: 判斷是否為 '2'
+        if clipboard_content == '2':
+            print("偵測到剪貼簿內容為 '2'，表示輸入法作用中。")
+            
+            pyautogui.press("shift")
+        else:
+            print("剪貼簿內容不是 '2'，第一次嘗試成功。")
+    except pyperclip.PyperclipException:
+        print("無法訪問剪貼簿，請確認程式是否有權限。")
+    except Exception as e:
+        print(f"發生錯誤: {e}")
 
 def debug_show_matching(res, template, screenshot, scale, max_val, threshold):
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
@@ -249,6 +284,8 @@ def show_main_window(profile):
             act.click_at_position(x, y)
         for i in range(count):
             index = i + start - 1
+            if (i == 1):
+                press_down_arrow_and_verify()
             for j in range(index):
                 act.click_down_arrow()
                 time.sleep(0.1)
