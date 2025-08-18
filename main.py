@@ -213,25 +213,57 @@ def open_finish_popup():
 
 def open_unpaid_popup():
     popup = tk.Toplevel()
-    popup.title("")
-    center_window(popup, 350, 120)
+    popup.title("山林 LINE 自動發送工具")  # 與主程式標題一致
+    popup.iconbitmap(source_path("shanlink_icon.ico"))  # 與主程式圖示一致
+    center_window(popup, 370, 140)
 
-    # === 重點：讓視窗跳到最上層並取得焦點 ===
+    # 設定背景顏色
+    popup.configure(bg="#2d2d2d")
+
+    # 讓視窗跳到最上層並取得焦點
     popup.attributes("-topmost", True)
-    popup.grab_set()         # 鎖定輸入焦點
-    popup.focus_force()      # 強制聚焦
-    
+    popup.grab_set()
+    popup.focus_force()
+
+    # 合併圖示與文字，不要粗體
     label = tk.Label(
         popup,
-        text="您未開啟服務，請至官方LINE購買金鑰開啟服務！\n如果已開啟服務，請重新登入",
-        font=("Arial", 12),
-        wraplength=310, # 這裡設定一個您希望的寬度，單位為像素
-        justify=tk.CENTER # 設定對齊方式，可選 tk.CENTER, tk.RIGHT
+        text="⚠️您未開啟服務",
+        font=("Arial", 14),
+        fg="#ff5555",
+        bg="#2d2d2d"
     )
-    label.pack(pady=20, padx=20)
+    label.pack(pady=(18, 5))
 
-    close_btn = tk.Button(popup, text="關閉", command=popup.destroy)
-    close_btn.pack()
+    # 內容
+    msg = tk.Label(
+        popup,
+        text="請至官方LINE購買金鑰開啟服務！\n如果已開啟服務，請重新登入",
+        font=("Arial", 10),
+        wraplength=320,
+        justify=tk.CENTER,
+        fg="#eeeeee",
+        bg="#2d2d2d"
+    )
+    msg.pack(pady=(0, 10), padx=20)
+
+    # 使用 tk.Button 並自訂顏色
+    close_btn = tk.Button(
+        popup,
+        text="關閉",
+        command=popup.destroy,
+        font=("Arial", 10),
+        fg="#fff",
+        bg="#ff5555",
+        activebackground="#ff7777",
+        activeforeground="#fff",
+        relief="flat",
+        bd=0,
+        padx=14,
+        pady=4,
+        cursor="hand2"
+    )
+    close_btn.pack(pady=(0, 8))
 
 def open_login_success_popup(profile):
     popup = tk.Toplevel()
