@@ -11,7 +11,6 @@ import pyautogui
 import pyperclip
 import numpy as np
 import mss
-from functools import partial
 import os
 import sys
 from auth_server import start_flask_server, login_queue
@@ -20,11 +19,11 @@ import webbrowser
 import queue
 import secrets
 import shared
-import requests
 from dotenv import load_dotenv
 load_dotenv()
 
 images = []
+stop_flag = False
 
 def press_down_arrow_and_verify():
     """
@@ -168,6 +167,7 @@ def show_login_window():
     global login_window, login_btn, status_label
 
     login_window = tk.Tk()
+    login_window.iconbitmap(source_path("shanlink_icon.ico"))
     login_window.title("登入 LINE")
     center_window(login_window, 300, 180)
     login_window.configure(bg="gray15")
@@ -197,6 +197,7 @@ def show_login_window():
 
 def open_finish_popup():
     popup = tk.Toplevel()
+    popup.iconbitmap(source_path("shanlink_icon.ico"))
     popup.title("")
     center_window(popup, 300, 120)
 
@@ -213,6 +214,7 @@ def open_finish_popup():
 
 def open_unpaid_popup():
     popup = tk.Toplevel()
+    popup.iconbitmap(source_path("shanlink_icon.ico"))
     popup.title("")
     center_window(popup, 350, 120)
 
@@ -235,6 +237,7 @@ def open_unpaid_popup():
 
 def open_login_success_popup(profile):
     popup = tk.Toplevel()
+    popup.iconbitmap(source_path("shanlink_icon.ico"))
     popup.title("登入成功")
     center_window(popup, 300, 120)
 
@@ -280,6 +283,7 @@ def show_main_window(profile):
             estimate_label.config(text="預估時間：-")
 
     def run(msg, count, start, sleep_time, is_expend):
+        global stop_flag
         estimate_label.config(text="")
         x, y = act.get_first_chatroom_position()
         act.click_at_position(x, y)
@@ -287,49 +291,64 @@ def show_main_window(profile):
             x, y = act.get_input_position()
             act.click_at_position(x, y)
         press_down_arrow_and_verify()
+
         for i in range(count):
+            if stop_flag:  # 🚨 偵測中止
+                print("⛔ 已中止執行")
+                progress_label.config(text="⛔ 已中止")
+                start_button.config(state="normal", text="開始執行", command=lambda: start_bot(profile))
+                return
+
             index = i + start - 1
             for j in range(index):
                 act.click_down_arrow()
                 time.sleep(0.1)
+
             send(msg, sleep_time, is_expend)
+
             # === 更新進度條 ===
             percent = ((i + 1) / count) * 100
             progress_var.set(percent)
             progress_label.config(text=f"進度：{int(percent)}%({i+1}/{count})")
             window.update_idletasks()
 
+        progress_label.config(text="✅ 完成！")
+        start_button.config(state="normal", text="開始執行", command=lambda: start_bot(profile))
+        open_finish_popup()
+
+    def stop_bot():
+        global stop_flag
+        stop_flag = True
+        print("🛑 stop_flag 設為 True，等待 thread 偵測並中止")
+
     def start_bot(profile):
+        global stop_flag
         if (profile['enable'] != True):
             open_unpaid_popup()
             return
 
         confirm = messagebox.askyesno("確認送出", "你確定要送出資料嗎？")
         if confirm:
-            print("✅ 使用者確認送出")
+            stop_flag = False  # 🚀 重置中止旗標
             msg = message_entry.get("1.0", "end-1c")
             count = int(count_entry.get())
             start = int(start_entry.get())
             sleep_time = float(time_entry.get())
-            # is_expend = repeat_var.get()
             is_expend = check_is_extend()
-            print(f"即將發送從第{start}開始發送：{msg}（次數：{count}）")
 
-            start_button.config(state="disabled")
+            start_button.config(
+                state="normal",
+                text="中止執行", 
+                command=stop_bot  # 🚨 改成中止功能
+            )
             progress_var.set(0)
             progress_label.config(text="進度：0%")
             window.update_idletasks()
 
             def run_with_ui_update():
                 run(msg, count, start, sleep_time, is_expend)
-                progress_label.config(text="✅ 完成！")
-                start_button.config(state="normal")
-                open_finish_popup()
 
-            # ✅ 用 Thread 執行，避免卡住 UI
             threading.Thread(target=run_with_ui_update, daemon=True).start()
-        else:
-            print("❌ 使用者取消送出")
 
     def upload_images():
         file_paths = filedialog.askopenfilenames(
