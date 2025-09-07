@@ -216,16 +216,16 @@ def open_unpaid_popup():
     popup = tk.Toplevel()
     popup.title("山林 LINE 自動發送工具")  # 與主程式標題一致
     popup.iconbitmap(source_path("shanlink_icon.ico"))  # 與主程式圖示一致
-    center_window(popup, 370, 140)
 
     # 設定背景顏色
     popup.configure(bg="#2d2d2d")
 
-    # 讓視窗跳到最上層並取得焦點
+    # 在顯示後再置中
+    popup.after(0, lambda: center_window(popup, 370, 140))
+
     popup.attributes("-topmost", True)
     popup.grab_set()
     popup.focus_force()
-
     # 合併圖示與文字，不要粗體
     label = tk.Label(
         popup,
@@ -270,13 +270,14 @@ def open_login_success_popup(profile):
     popup = tk.Toplevel()
     popup.iconbitmap(source_path("shanlink_icon.ico"))
     popup.title("登入成功")
-    center_window(popup, 300, 120)
 
-    # === 重點：讓視窗跳到最上層並取得焦點 ===
+    # 在顯示後再置中
+    popup.after(0, lambda: center_window(popup, 300, 120))
+
     popup.attributes("-topmost", True)
-    popup.grab_set()         # 鎖定輸入焦點
-    popup.focus_force()      # 強制聚焦
-    
+    popup.grab_set()
+    popup.focus_force()
+
     label = tk.Label(popup, text=f"{profile['lineUserName']}恭喜你，登入成功！")
     label.pack(pady=20)
 
