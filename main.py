@@ -179,7 +179,7 @@ def show_login_window():
         query = {
             'response_type': 'code',
             'client_id': "2007740858",
-            'redirect_uri': "http://127.0.0.1:5000/callback",
+            'redirect_uri': "http://127.0.0.1:5123/callback",
             'state': shared.state,
             'scope': 'profile openid email'
         }
@@ -197,14 +197,15 @@ def show_login_window():
 
 def open_finish_popup():
     popup = tk.Toplevel()
-    popup.iconbitmap(source_path("shanlink_icon.ico"))
-    popup.title("")
-    center_window(popup, 300, 120)
+    popup.title("山林 LINE 自動發送工具")  # 與主程式標題一致
+    popup.iconbitmap(source_path("shanlink_icon.ico"))  # 與主程式圖示一致
+
+    popup.after(0, lambda: center_window(popup, 300, 120))
 
     # === 重點：讓視窗跳到最上層並取得焦點 ===
     popup.attributes("-topmost", True)
-    popup.grab_set()         # 鎖定輸入焦點
-    popup.focus_force()      # 強制聚焦
+    popup.grab_set()
+    popup.focus_force()
     
     label = tk.Label(popup, text="恭喜你，發送訊息完成！")
     label.pack(pady=20)
@@ -314,7 +315,7 @@ def show_main_window(profile):
         except:
             estimate_label.config(text="預估時間：-")
 
-    def run(msg, count, start, sleep_time, is_expend):
+    def run(msg, count, start, pin, sleep_time, is_expend):
         global stop_flag
         estimate_label.config(text="")
         x, y = act.get_first_chatroom_position()
@@ -332,6 +333,10 @@ def show_main_window(profile):
                 return
 
             index = i + start - 1
+
+            if (index > pin):
+                index -= pin
+
             for j in range(index):
                 act.click_down_arrow()
                 time.sleep(0.1)
@@ -355,9 +360,9 @@ def show_main_window(profile):
 
     def start_bot(profile):
         global stop_flag
-        if (profile['enable'] != True):
-            open_unpaid_popup()
-            return
+        # if (profile['enable'] != True):
+        #     open_unpaid_popup()
+        #     return
 
         confirm = messagebox.askyesno("確認送出", "你確定要送出資料嗎？")
         if confirm:
@@ -365,6 +370,7 @@ def show_main_window(profile):
             msg = message_entry.get("1.0", "end-1c")
             count = int(count_entry.get())
             start = int(start_entry.get())
+            pin = int(pin_entry.get())
             sleep_time = float(time_entry.get())
             is_expend = check_is_extend()
 
@@ -378,7 +384,7 @@ def show_main_window(profile):
             window.update_idletasks()
 
             def run_with_ui_update():
-                run(msg, count, start, sleep_time, is_expend)
+                run(msg, count, start, pin, sleep_time, is_expend)
 
             threading.Thread(target=run_with_ui_update, daemon=True).start()
 
@@ -485,6 +491,11 @@ def show_main_window(profile):
     start_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
     start_entry.insert(0, "1")
     start_entry.pack()
+
+    tk.Label(right_frame, text="訂選數量：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
+    pin_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
+    pin_entry.insert(0, "1")
+    pin_entry.pack()
 
     # 建立 Boolean 變數
     # repeat_var = tk.BooleanVar()

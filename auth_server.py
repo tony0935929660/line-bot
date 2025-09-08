@@ -12,7 +12,7 @@ login_queue = Queue()  # 共享給主程式使用
 
 LINE_CLIENT_ID = "2007740858"
 LINE_CLIENT_SECRET = "183fc88006f67a1e169cef89c4494432"
-REDIRECT_URI = "http://127.0.0.1:5000/callback"
+REDIRECT_URI = "http://127.0.0.1:5123/callback"
 
 @app.route('/callback')
 def callback():
@@ -63,4 +63,4 @@ def login(accessToken):
         return redirect("https://www.shanlink.tech/fail")
 
 def start_flask_server():
-    app.run(port=5000)
+    app.run(port=5123)
