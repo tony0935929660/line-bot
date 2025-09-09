@@ -19,6 +19,7 @@ import webbrowser
 import queue
 import secrets
 import shared
+import requests
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -161,7 +162,7 @@ def poll_login_queue():
 
         # 關閉登入視窗，打開主畫面
         login_window.destroy()
-        show_main_window(profile)
+        show_main_window(profile['user'], profile['token'])
 
 def show_login_window():
     global login_window, login_btn, status_label
@@ -213,21 +214,30 @@ def open_finish_popup():
     close_btn = tk.Button(popup, text="關閉", command=popup.destroy)
     close_btn.pack()
 
-def open_unpaid_popup():
+def redeem_key_api(key, token):
+    url = "https://shanlink.tech/api/License/ActivateByKey"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    try:
+        response = requests.post(url, json={"key": key}, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("success", False)
+    except Exception as e:
+        print("兌換 API 請求失敗:", e)
+        return False
+
+def open_unpaid_popup(token, profile, start_bot_callback):
     popup = tk.Toplevel()
-    popup.title("山林 LINE 自動發送工具")  # 與主程式標題一致
-    popup.iconbitmap(source_path("shanlink_icon.ico"))  # 與主程式圖示一致
-
-    # 設定背景顏色
+    popup.title("山林 LINE 自動發送工具")
+    popup.iconbitmap(source_path("shanlink_icon.ico"))
     popup.configure(bg="#2d2d2d")
-
-    # 在顯示後再置中
-    popup.after(0, lambda: center_window(popup, 370, 140))
-
+    popup.after(0, lambda: center_window(popup, 370, 180))
     popup.attributes("-topmost", True)
     popup.grab_set()
     popup.focus_force()
-    # 合併圖示與文字，不要粗體
+
     label = tk.Label(
         popup,
         text="⚠️您未開啟服務",
@@ -237,7 +247,6 @@ def open_unpaid_popup():
     )
     label.pack(pady=(18, 5))
 
-    # 內容
     msg = tk.Label(
         popup,
         text="請至官方LINE購買金鑰開啟服務！\n如果已開啟服務，請重新登入",
@@ -249,15 +258,31 @@ def open_unpaid_popup():
     )
     msg.pack(pady=(0, 10), padx=20)
 
-    # 使用 tk.Button 並自訂顏色
-    close_btn = tk.Button(
+    key_entry = tk.Entry(popup, font=("Arial", 10), width=28)
+    key_entry.pack(pady=(0, 5))
+
+    def redeem_key():
+        key = key_entry.get().strip()
+        if not key:
+            messagebox.showerror("錯誤", "請輸入金鑰", parent=popup)
+            return
+        result = redeem_key_api(key, token)
+        if result:
+            messagebox.showinfo("成功", "兌換成功，服務已啟用！", parent=popup)
+            profile['enable'] = True
+            popup.destroy()
+            start_bot_callback(profile)
+        else:
+            messagebox.showerror("兌換失敗", "金鑰無效或已使用", parent=popup)
+
+    redeem_btn = tk.Button(
         popup,
-        text="關閉",
-        command=popup.destroy,
+        text="兌換金鑰",
+        command=redeem_key,
         font=("Arial", 10),
         fg="#fff",
-        bg="#ff5555",
-        activebackground="#ff7777",
+        bg="#44bb44",
+        activebackground="#66dd66",
         activeforeground="#fff",
         relief="flat",
         bd=0,
@@ -265,7 +290,7 @@ def open_unpaid_popup():
         pady=4,
         cursor="hand2"
     )
-    close_btn.pack(pady=(0, 8))
+    redeem_btn.pack(pady=(0, 8))
 
 def open_login_success_popup(profile):
     popup = tk.Toplevel()
@@ -303,7 +328,7 @@ def send(msg, sleep_time, is_expend):
         act.leave()
         time.sleep(sleep_time)
 
-def show_main_window(profile):
+def show_main_window(profile, token):
     global window
 
     def update_estimated_time(*args):
@@ -360,9 +385,9 @@ def show_main_window(profile):
 
     def start_bot(profile):
         global stop_flag
-        # if (profile['enable'] != True):
-        #     open_unpaid_popup()
-        #     return
+        if (profile.get('enable') != True):
+            open_unpaid_popup(token, profile, start_bot)
+            return
 
         confirm = messagebox.askyesno("確認送出", "你確定要送出資料嗎？")
         if confirm:

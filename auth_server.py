@@ -53,7 +53,10 @@ def login(accessToken):
         profile_res = response.json()
 
         # 放入 queue 傳回 Tkinter 主程式
-        login_queue.put(profile_res['user'])
+        login_queue.put({
+            "user": profile_res['user'],
+            "token": profile_res.get('token')
+        })
 
         return redirect("https://www.shanlink.tech/success")
 
