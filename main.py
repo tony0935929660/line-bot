@@ -217,15 +217,15 @@ def open_finish_popup():
 def redeem_key_api(key, token):
     url = "https://shanlink.tech/api/License/ActivateByKey"
     headers = {
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
     }
     try:
         response = requests.post(url, json={"key": key}, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        return data.get("success", False)
-    except Exception as e:
-        print("兌換 API 請求失敗:", e)
+        print("HTTP 狀態碼:", response.status_code)
+        return response.status_code == 200
+    except requests.exceptions.RequestException as e:
+        print("API 請求失敗:", e)
         return False
 
 def open_unpaid_popup(token, profile, start_bot_callback):
