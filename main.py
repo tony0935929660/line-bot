@@ -170,7 +170,7 @@ def show_login_window():
     login_window = tk.Tk()
     login_window.iconbitmap(source_path("shanlink_icon.ico"))
     login_window.title("登入 LINE")
-    center_window(login_window, 300, 180)
+    login_window.after(0, lambda: center_window(login_window, 300, 180))
     login_window.configure(bg="gray15")
 
     tk.Label(login_window, text="請先登入 LINE", bg="gray15", fg="white", font=("Arial", 12)).pack(pady=15)
@@ -201,7 +201,7 @@ def open_finish_popup():
     popup.title("山林 LINE 自動發送工具")  # 與主程式標題一致
     popup.iconbitmap(source_path("shanlink_icon.ico"))  # 與主程式圖示一致
 
-    popup.after(0, lambda: center_window(popup, 300, 120))
+    popup.after(1, lambda: center_window(popup, 300, 120))
 
     # === 重點：讓視窗跳到最上層並取得焦點 ===
     popup.attributes("-topmost", True)
@@ -517,9 +517,9 @@ def show_main_window(profile, token):
     start_entry.insert(0, "1")
     start_entry.pack()
 
-    tk.Label(right_frame, text="訂選數量：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
+    tk.Label(right_frame, text="釘選數量：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
     pin_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
-    pin_entry.insert(0, "1")
+    pin_entry.insert(0, "0")
     pin_entry.pack()
 
     # 建立 Boolean 變數
