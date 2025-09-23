@@ -358,8 +358,8 @@ def show_main_window(profile, token):
                 return
 
             index = i + start - 1
-
-            if (index > pin):
+            
+            if (index > pin and pin > 0):
                 index -= pin
 
             for j in range(index):
