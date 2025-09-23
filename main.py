@@ -364,7 +364,6 @@ def show_main_window(profile, token):
 
             for j in range(index):
                 act.click_down_arrow()
-                time.sleep(0.1)
 
             send(msg, sleep_time, is_expend)
 
