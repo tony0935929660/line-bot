@@ -489,6 +489,25 @@ def show_main_window(profile, token):
     message_entry = tk.Text(left_frame, width=30, height=10)
     message_entry.pack()
 
+    # 建立右鍵選單
+    menu = tk.Menu(message_entry, tearoff=0)
+    menu.add_command(label="全選", command=lambda: message_entry.tag_add("sel", "1.0", "end"))
+    menu.add_command(label="複製", command=lambda: message_entry.event_generate("<<Copy>>"))
+    menu.add_command(label="貼上", command=lambda: message_entry.event_generate("<<Paste>>"))
+    menu.add_command(label="取消", command=lambda: message_entry.event_generate("<<Undo>>"))
+
+    def show_context_menu(event):
+        menu.tk_popup(event.x_root, event.y_root)
+
+    message_entry.bind("<Button-3>", show_context_menu)  # Windows 右鍵
+
+    # 新增清空按鈕
+    def clear_message_entry():
+        message_entry.delete("1.0", "end")
+
+    clear_btn = tk.Button(left_frame, text="清空內容", command=clear_message_entry)
+    clear_btn.pack(pady=(5, 0))
+
     # === 右側：其他輸入框 ===
     tk.Label(right_frame, text="發送次數：", bg="gray15", fg="white").pack(anchor="w", pady=(0, 5))
     count_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
