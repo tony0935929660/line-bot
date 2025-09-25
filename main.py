@@ -350,6 +350,9 @@ def show_main_window(profile, token):
             act.click_at_position(x, y)
         press_down_arrow_and_verify()
 
+        for i in range(30):
+            act.click_up_arrow()
+
         for i in range(count):
             if stop_flag:  # 🚨 偵測中止
                 print("⛔ 已中止執行")
