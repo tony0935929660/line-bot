@@ -365,8 +365,7 @@ def show_main_window(profile, token):
             if (index > pin and pin > 0):
                 index -= pin
 
-            for j in range(index):
-                act.click_down_arrow()
+            act.ctrl_down_arrow()
 
             send(msg, sleep_time, is_expend)
 

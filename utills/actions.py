@@ -20,6 +20,11 @@ def leave():
 
 def click_down_arrow():
     pyautogui.press("down")
+
+def ctrl_down_arrow():
+    pyautogui.keyDown('ctrl')
+    pyautogui.press('down')
+    pyautogui.keyUp('ctrl')
     
 def click_up_arrow():
     pyautogui.press("up")
