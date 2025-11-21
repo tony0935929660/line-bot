@@ -532,15 +532,15 @@ def show_main_window(profile, token):
     time_entry.pack()
     time_entry.bind("<<ComboboxSelected>>", update_estimated_time)
 
-    tk.Label(right_frame, text="起始位置：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
-    start_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
-    start_entry.insert(0, "1")
-    start_entry.pack()
+    # tk.Label(right_frame, text="起始位置：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
+    # start_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
+    # start_entry.insert(0, "1")
+    # start_entry.pack()
 
-    tk.Label(right_frame, text="釘選數量：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
-    pin_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
-    pin_entry.insert(0, "0")
-    pin_entry.pack()
+    # tk.Label(right_frame, text="釘選數量：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
+    # pin_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
+    # pin_entry.insert(0, "0")
+    # pin_entry.pack()
 
     # 建立 Boolean 變數
     # repeat_var = tk.BooleanVar()
