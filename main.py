@@ -350,8 +350,8 @@ def show_main_window(profile, token):
             act.click_at_position(x, y)
         press_down_arrow_and_verify()
 
-        for i in range(30):
-            act.click_up_arrow()
+        # for i in range(30):
+        #     act.click_up_arrow()
 
         for i in range(count):
             if stop_flag:  # 🚨 偵測中止
@@ -365,7 +365,10 @@ def show_main_window(profile, token):
             if (index > pin and pin > 0):
                 index -= pin
 
-            act.ctrl_down_arrow()
+            # act.ctrl_down_arrow()
+
+            if (index > 0):
+                act.click_down_arrow()
 
             send(msg, sleep_time, is_expend)
 
