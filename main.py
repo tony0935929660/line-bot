@@ -368,7 +368,9 @@ def show_main_window(profile, token):
             # act.ctrl_down_arrow()
 
             if (index > 0):
-                act.click_down_arrow()
+                act.click_up_arrow()
+            else:
+                act.ctrl_down_arrow()
 
             send(msg, sleep_time, is_expend)
 
