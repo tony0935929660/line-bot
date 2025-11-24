@@ -20,11 +20,39 @@ import queue
 import secrets
 import shared
 import requests
+from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
 images = []
 stop_flag = False
+
+def build_engineer_style_message(total: int, finished_at):
+    return (
+        f"任務完成：自動發送\n"
+        f"共處理：{total} 筆\n"
+        f"完成時間：{finished_at:%Y/%m/%d %H:%M}\n\n"
+        f"— 系統通知"
+    )
+
+def line_push_message(user_id: str, message: str):
+    """
+    使用 LINE Messaging API 發送訊息給指定 userId。
+    """
+    url = "https://api.line.me/v2/bot/message/push"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer w63zlqzIKOHRZv8O3CspLRMxfsZPjZmXBdD7jsvt0gdfg4hskuuAYGz3YWL/r4GawJO19417ENb97SL0Qu/eanYO7n3p4sPeBwyAOam6Mz6GD4sw4NEutIdvgcyzdzfpj0FeBkMtOvtw9HvCg+s8IQdB04t89/1O/w1cDnyilFU="
+    }
+
+    body = {
+        "to": user_id,
+        "messages": [
+            {"type": "text", "text": message}
+        ]
+    }
+
+    requests.post(url, headers=headers, json=body)
 
 def press_down_arrow_and_verify():
     """
@@ -382,6 +410,10 @@ def show_main_window(profile, token):
 
         progress_label.config(text="✅ 完成！")
         start_button.config(state="normal", text="開始執行", command=lambda: start_bot(profile))
+        
+        msg = build_engineer_style_message(count, datetime.now())
+        line_push_message(profile['lineId'], msg)
+        
         open_finish_popup()
 
     def stop_bot():
