@@ -381,6 +381,12 @@ def show_main_window(profile, token):
         # for i in range(30):
         #     act.click_up_arrow()
 
+        print(f"🚀 從第 {start} 筆開始，總共發送 {count} 筆，釘選數量 {pin} 筆")
+        
+        act.ctrl_down_arrow()
+        for j in range(start - 1):
+            act.click_up_arrow()
+
         for i in range(count):
             if stop_flag:  # 🚨 偵測中止
                 print("⛔ 已中止執行")
@@ -397,8 +403,6 @@ def show_main_window(profile, token):
 
             if (index > 0):
                 act.click_up_arrow()
-            else:
-                act.ctrl_down_arrow()
 
             send(msg, sleep_time, is_expend)
 
@@ -505,9 +509,19 @@ def show_main_window(profile, token):
     window.iconbitmap(source_path("shanlink_icon.ico"))
     window.title("山林 LINE 自動發送工具")
     window.configure(bg="gray15")
-    center_window(window, 600, 600)
+    # center_window(window, 600, 600)
+    
+    # 延遲置中，確保視窗完全建立後再置中
+    window.after(0, lambda: center_window(window, 600, 600))
 
-    open_login_success_popup(profile)
+    # 讓主視窗跳到最上層並取得焦點
+    window.attributes("-topmost", True)
+    window.grab_set()
+    window.focus_force()
+    window.after(100, lambda: window.attributes("-topmost", False))  # 100ms 後取消 topmost
+
+    # 再執行登入成功彈窗
+    window.after(200, lambda: open_login_success_popup(profile))
 
     # === 驗證函數 ===
     intcmd = (window.register(lambda P: P.isdigit() or P == ""), "%P")
@@ -569,10 +583,10 @@ def show_main_window(profile, token):
     time_entry.pack()
     time_entry.bind("<<ComboboxSelected>>", update_estimated_time)
 
-    # tk.Label(right_frame, text="起始位置：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
+    tk.Label(right_frame, text="跳過人數：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
     start_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
     start_entry.insert(0, "1")
-    # start_entry.pack()
+    start_entry.pack()
 
     # tk.Label(right_frame, text="釘選數量：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
     pin_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
