@@ -51,6 +51,7 @@ def login(accessToken):
         )
         response.raise_for_status()
         profile_res = response.json()
+        print("登入成功:", profile_res)
 
         # 放入 queue 傳回 Tkinter 主程式
         login_queue.put({

@@ -27,10 +27,12 @@ load_dotenv()
 images = []
 stop_flag = False
 
-def build_engineer_style_message(total: int, finished_at):
+def build_engineer_style_message(total: int, finished_at, estimated_minutes: float, actual_minutes: float):
     return (
         f"任務完成：自動發送\n"
         f"共處理：{total} 筆\n"
+        f"預估時間：{estimated_minutes:.1f} 分鐘\n"
+        f"實際時間：{actual_minutes:.1f} 分鐘\n"
         f"完成時間：{finished_at:%Y/%m/%d %H:%M}\n\n"
         f"— 系統通知"
     )
@@ -339,20 +341,45 @@ def open_login_success_popup(profile):
     close_btn.pack()
 
 def send(msg, sleep_time, is_expend):
+    global stop_flag
+    if stop_flag:
+        return
+    
     act.enter()
+    if stop_flag:
+        return
     time.sleep(sleep_time)
+    
     act.copy_text(msg)
+    if stop_flag:
+        return
     time.sleep(sleep_time)
+    
     act.paste()
+    if stop_flag:
+        return
     time.sleep(sleep_time)
+    
     for item in images:
+        if stop_flag:
+            return
         act.copy_image(item['path'])
+        if stop_flag:
+            return
         time.sleep(sleep_time)
         act.paste()
+        if stop_flag:
+            return
         time.sleep(sleep_time)
+    
+    if stop_flag:
+        return
     act.enter()
     time.sleep(sleep_time)
+    
     if not is_expend:
+        if stop_flag:
+            return
         act.leave()
         time.sleep(sleep_time)
 
@@ -370,16 +397,22 @@ def show_main_window(profile, token):
 
     def run(msg, count, start, pin, sleep_time, is_expend):
         global stop_flag
-        estimate_label.config(text="")
+        
+        # 記錄開始時間
+        start_time = time.time()
+        
+        # 計算預估時間（分鐘）
+        estimated_seconds = (1.1 + (sleep_time * (5 + len(images)))) * count
+        estimated_minutes = estimated_seconds / 60
+        
+        estimate_label.config(text=f"執行中... 預估 {estimated_minutes:.1f} 分鐘")
+        
         x, y = act.get_first_chatroom_position()
         act.click_at_position(x, y)
         if is_expend:
             x, y = act.get_input_position()
             act.click_at_position(x, y)
         press_down_arrow_and_verify()
-
-        # for i in range(30):
-        #     act.click_up_arrow()
 
         print(f"🚀 從第 {start} 筆開始，總共發送 {count} 筆，釘選數量 {pin} 筆")
         
@@ -399,24 +432,34 @@ def show_main_window(profile, token):
             if (index > pin and pin > 0):
                 index -= pin
 
-            # act.ctrl_down_arrow()
-
             if (index > 0):
                 act.click_up_arrow()
 
             send(msg, sleep_time, is_expend)
 
-            # === 更新進度條 ===
+            # === 更新進度條和倒數計時 ===
             percent = ((i + 1) / count) * 100
+            elapsed_time = time.time() - start_time
+            if i > 0:  # 避免除零錯誤
+                remaining_time = (elapsed_time / (i + 1)) * (count - i - 1)
+                remaining_minutes = remaining_time / 60
+                progress_label.config(text=f"進度：{int(percent)}%({i+1}/{count}) - 剩餘約 {remaining_minutes:.1f} 分鐘")
+            else:
+                progress_label.config(text=f"進度：{int(percent)}%({i+1}/{count})")
             progress_var.set(percent)
-            progress_label.config(text=f"進度：{int(percent)}%({i+1}/{count})")
             window.update_idletasks()
 
+        # 計算實際執行時間
+        end_time = time.time()
+        actual_seconds = end_time - start_time
+        actual_minutes = actual_seconds / 60
+        
         progress_label.config(text="✅ 完成！")
         start_button.config(state="normal", text="開始執行", command=lambda: start_bot(profile))
         
-        msg = build_engineer_style_message(count, datetime.now())
-        line_push_message(profile['lineId'], msg)
+        # 發送包含時間資訊的訊息
+        msg_with_time = build_engineer_style_message(count, datetime.now(), estimated_minutes, actual_minutes)
+        line_push_message(profile['lineId'], msg_with_time)
         
         open_finish_popup()
 
@@ -585,7 +628,7 @@ def show_main_window(profile, token):
 
     tk.Label(right_frame, text="跳過人數：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
     start_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
-    start_entry.insert(0, "1")
+    start_entry.insert(0, "0")
     start_entry.pack()
 
     # tk.Label(right_frame, text="釘選數量：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
