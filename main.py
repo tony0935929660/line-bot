@@ -416,8 +416,10 @@ def show_main_window(profile, token):
 
         print(f"🚀 從第 {start} 筆開始，總共發送 {count} 筆，釘選數量 {pin} 筆")
         
-        act.ctrl_down_arrow()
-        for j in range(start - 1):
+        # act.ctrl_down_arrow()
+        # for j in range(start - 1):
+        #     act.click_up_arrow()
+        for _ in range(30):
             act.click_up_arrow()
 
         for i in range(count):
@@ -428,12 +430,17 @@ def show_main_window(profile, token):
                 return
 
             index = i + start - 1
+            print(f"Current index: {index}")
             
-            if (index > pin and pin > 0):
+            if (index > pin and pin > 0 and i != 0):
                 index -= pin
+                print(f"Adjusted index after pin: {index}")
 
-            if (index > 0):
-                act.click_up_arrow()
+            # if (index > 0):
+            #     act.click_up_arrow()
+            for _ in range(index):
+                print(f"Moving up to index: {index}")
+                act.click_down_arrow()
 
             send(msg, sleep_time, is_expend)
 
@@ -646,15 +653,15 @@ def show_main_window(profile, token):
     time_entry.pack()
     time_entry.bind("<<ComboboxSelected>>", update_estimated_time)
 
-    tk.Label(right_frame, text="跳過人數：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
+    tk.Label(right_frame, text="起始位子", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
     start_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
-    start_entry.insert(0, "0")
+    start_entry.insert(0, "1")
     start_entry.pack()
 
-    # tk.Label(right_frame, text="釘選數量：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
+    tk.Label(right_frame, text="釘選數量：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
     pin_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
     pin_entry.insert(0, "0")
-    # pin_entry.pack()
+    pin_entry.pack()
 
     # 建立 Boolean 變數
     # repeat_var = tk.BooleanVar()
