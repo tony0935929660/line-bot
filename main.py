@@ -470,7 +470,27 @@ def show_main_window(profile, token):
 
     def start_bot(profile):
         global stop_flag
-        if (profile.get('enable') != True):
+        
+        # 檢查服務是否啟用或是否已過期
+        is_enabled = profile.get('enable') == True
+        expire_at = profile.get('expireAt')
+        is_expired = False
+        
+        if expire_at:
+            try:
+                from datetime import datetime
+                # 直接解析你的時間格式，不需要替換 Z
+                expire_time = datetime.fromisoformat(expire_at)
+                current_time = datetime.now()
+                is_expired = current_time > expire_time
+                print(f"過期時間: {expire_time}")
+                print(f"現在時間: {current_time}")
+                print(f"是否過期: {is_expired}")
+            except Exception as e:
+                print(f"解析過期時間失敗: {e}")
+                is_expired = True  # 解析失敗視為過期
+        
+        if not is_enabled or is_expired:
             open_unpaid_popup(token, profile, start_bot)
             return
 
