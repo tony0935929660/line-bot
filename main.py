@@ -427,10 +427,10 @@ def show_main_window(profile, token):
                 start_button.config(state="normal", text="開始執行", command=lambda: start_bot(profile))
                 return
 
-            index = i + start - 1
+            index = i + start
             
-            if (index > pin and pin > 0):
-                index -= pin
+            # if (index > pin and pin > 0):
+            #     index -= pin
 
             if (index > 0):
                 act.click_up_arrow()
