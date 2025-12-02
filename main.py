@@ -427,13 +427,14 @@ def show_main_window(profile, token):
                 start_button.config(state="normal", text="開始執行", command=lambda: start_bot(profile))
                 return
 
-            index = i + start
+            # index = i + start
             
             # if (index > pin and pin > 0):
             #     index -= pin
 
-            if (index > 0):
-                act.click_up_arrow()
+            # if (index > 0):
+                # act.click_up_arrow()
+            act.ctrl_down_arrow()
 
             send(msg, sleep_time, is_expend)
 
@@ -633,7 +634,7 @@ def show_main_window(profile, token):
 
     tk.Label(right_frame, text="延遲時間：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
 
-    delay_options = ["0.25", "0.5", "0.75", "1"]
+    delay_options = ["0.25", "0.5", "0.75", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
     delay_var = tk.StringVar(value="0.5")
 
     time_entry = ttk.Combobox(
@@ -646,10 +647,10 @@ def show_main_window(profile, token):
     time_entry.pack()
     time_entry.bind("<<ComboboxSelected>>", update_estimated_time)
 
-    tk.Label(right_frame, text="跳過人數：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
+    # tk.Label(right_frame, text="跳過人數：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
     start_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
     start_entry.insert(0, "0")
-    start_entry.pack()
+    # start_entry.pack()
 
     # tk.Label(right_frame, text="釘選數量：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
     pin_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
