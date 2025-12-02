@@ -633,7 +633,7 @@ def show_main_window(profile, token):
 
     tk.Label(right_frame, text="延遲時間：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
 
-    delay_options = ["0.25", "0.5", "0.75", "1"]
+    delay_options = ["0.25", "0.5", "0.75", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
     delay_var = tk.StringVar(value="0.5")
 
     time_entry = ttk.Combobox(
