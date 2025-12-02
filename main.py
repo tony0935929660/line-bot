@@ -432,7 +432,7 @@ def show_main_window(profile, token):
             # if (index > pin and pin > 0):
             #     index -= pin
 
-            if (index > 1):
+            if (index > 0):
                 act.click_up_arrow()
 
             send(msg, sleep_time, is_expend)
