@@ -10,9 +10,15 @@ load_dotenv()
 app = Flask(__name__)
 login_queue = Queue()  # 共享給主程式使用
 
-LINE_CLIENT_ID = "2007740858"
-LINE_CLIENT_SECRET = "183fc88006f67a1e169cef89c4494432"
-REDIRECT_URI = "http://127.0.0.1:5123/callback"
+# 從環境變數取得敏感資訊
+LINE_CLIENT_ID = os.getenv('LINE_CLIENT_ID')
+LINE_CLIENT_SECRET = os.getenv('LINE_CLIENT_SECRET')
+REDIRECT_URI = os.getenv('REDIRECT_URI')
+SHANLINK_API_BASE_URL = os.getenv('SHANLINK_API_BASE_URL')
+LOGIN_API_ENDPOINT = os.getenv('LOGIN_API_ENDPOINT')
+SUCCESS_REDIRECT_URL = os.getenv('SUCCESS_REDIRECT_URL')
+FAIL_REDIRECT_URL = os.getenv('FAIL_REDIRECT_URL')
+AUTH_SERVER_PORT = int(os.getenv('AUTH_SERVER_PORT', 5123))
 
 @app.route('/callback')
 def callback():
@@ -45,7 +51,8 @@ def login(accessToken):
     try:
         print(accessToken)
         # 發送 POST 請求，並將資料放入 data 參數
-        response = requests.post('https://www.shanlink.tech/api/AccountApi/LineTokenLogin',
+        api_url = f"{SHANLINK_API_BASE_URL}{LOGIN_API_ENDPOINT}"
+        response = requests.post(api_url,
             headers=headers,
             json={'accessToken': accessToken}
         )
@@ -59,12 +66,12 @@ def login(accessToken):
             "token": profile_res.get('token')
         })
 
-        return redirect("https://www.shanlink.tech/success")
+        return redirect(SUCCESS_REDIRECT_URL)
 
     except requests.exceptions.RequestException as e:
         print("請求失敗:", e)
         
-        return redirect("https://www.shanlink.tech/fail")
+        return redirect(FAIL_REDIRECT_URL)
 
 def start_flask_server():
-    app.run(port=5123)
+    app.run(port=AUTH_SERVER_PORT)

@@ -41,10 +41,11 @@ def line_push_message(user_id: str, message: str):
     """
     使用 LINE Messaging API 發送訊息給指定 userId。
     """
-    url = "https://api.line.me/v2/bot/message/push"
+    url = os.getenv('LINE_MESSAGING_API_URL')
+    line_bot_token = os.getenv('LINE_BOT_CHANNEL_ACCESS_TOKEN')
     headers = {
         "Content-Type": "application/json",
-        "Authorization": "Bearer w63zlqzIKOHRZv8O3CspLRMxfsZPjZmXBdD7jsvt0gdfg4hskuuAYGz3YWL/r4GawJO19417ENb97SL0Qu/eanYO7n3p4sPeBwyAOam6Mz6GD4sw4NEutIdvgcyzdzfpj0FeBkMtOvtw9HvCg+s8IQdB04t89/1O/w1cDnyilFU="
+        "Authorization": f"Bearer {line_bot_token}"
     }
 
     body = {
@@ -245,7 +246,7 @@ def open_finish_popup():
     close_btn.pack()
 
 def redeem_key_api(key, token):
-    url = "https://shanlink.tech/api/License/ActivateByKey"
+    url = "https://www.shanlink.tech/api/License/ActivateByKey"
     headers = {
         "Authorization": f"Bearer {token}",
         "Content-Type": "application/json",
