@@ -13,48 +13,9 @@ import numpy as np
 import mss
 import os
 import sys
-from auth_server import start_flask_server, login_queue
-from urllib.parse import urlencode
-import webbrowser
-import queue
-import secrets
-import shared
-import requests
-from datetime import datetime
-from dotenv import load_dotenv
-load_dotenv()
 
 images = []
 stop_flag = False
-
-def build_engineer_style_message(total: int, finished_at, estimated_minutes: float, actual_minutes: float):
-    return (
-        f"任務完成：自動發送\n"
-        f"共處理：{total} 筆\n"
-        f"預估時間：{estimated_minutes:.1f} 分鐘\n"
-        f"實際時間：{actual_minutes:.1f} 分鐘\n"
-        f"完成時間：{finished_at:%Y/%m/%d %H:%M}\n\n"
-        f"— 系統通知"
-    )
-
-def line_push_message(user_id: str, message: str):
-    """
-    使用 LINE Messaging API 發送訊息給指定 userId。
-    """
-    url = "https://api.line.me/v2/bot/message/push"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer w63zlqzIKOHRZv8O3CspLRMxfsZPjZmXBdD7jsvt0gdfg4hskuuAYGz3YWL/r4GawJO19417ENb97SL0Qu/eanYO7n3p4sPeBwyAOam6Mz6GD4sw4NEutIdvgcyzdzfpj0FeBkMtOvtw9HvCg+s8IQdB04t89/1O/w1cDnyilFU="
-    }
-
-    body = {
-        "to": user_id,
-        "messages": [
-            {"type": "text", "text": message}
-        ]
-    }
-
-    requests.post(url, headers=headers, json=body)
 
 def press_down_arrow_and_verify():
     """
@@ -179,53 +140,6 @@ def center_window(window, width, height):
     y = (screen_height - height) // 2
     window.geometry(f"{width}x{height}+{x}+{y}")
 
-def poll_login_queue():
-    global login_btn
-    try:
-        profile = login_queue.get_nowait()
-    except queue.Empty:
-        login_window.after(1000, poll_login_queue)
-    else:
-        display_name = profile.get("lineUserName", "未知使用者")
-        status_label.config(text=f"🎉 已登入：{display_name}")
-        login_btn.config(state="disabled")
-
-        # 關閉登入視窗，打開主畫面
-        login_window.destroy()
-        show_main_window(profile['user'], profile['token'])
-
-def show_login_window():
-    global login_window, login_btn, status_label
-
-    login_window = tk.Tk()
-    login_window.iconbitmap(source_path("shanlink_icon.ico"))
-    login_window.title("登入 LINE")
-    login_window.after(0, lambda: center_window(login_window, 300, 180))
-    login_window.configure(bg="gray15")
-
-    tk.Label(login_window, text="請先登入 LINE", bg="gray15", fg="white", font=("Arial", 12)).pack(pady=15)
-
-    def open_line_login():
-        shared.state = secrets.token_hex(16)
-        query = {
-            'response_type': 'code',
-            'client_id': "2007740858",
-            'redirect_uri': "http://127.0.0.1:5123/callback",
-            'state': shared.state,
-            'scope': 'profile openid email'
-        }
-        auth_url = f"https://access.line.me/oauth2/v2.1/authorize?{urlencode(query)}"
-        webbrowser.open_new(auth_url)
-
-    login_btn = tk.Button(login_window, text="LINE 登入", command=open_line_login)
-    login_btn.pack(pady=10)
-
-    status_label = tk.Label(login_window, text="", bg="gray15", fg="lightgreen")
-    status_label.pack()
-
-    poll_login_queue()
-    login_window.mainloop()
-
 def open_finish_popup():
     popup = tk.Toplevel()
     popup.title("山林 LINE 自動發送工具")  # 與主程式標題一致
@@ -239,102 +153,6 @@ def open_finish_popup():
     popup.focus_force()
     
     label = tk.Label(popup, text="恭喜你，發送訊息完成！")
-    label.pack(pady=20)
-
-    close_btn = tk.Button(popup, text="關閉", command=popup.destroy)
-    close_btn.pack()
-
-def redeem_key_api(key, token):
-    url = "https://shanlink.tech/api/License/ActivateByKey"
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    }
-    try:
-        response = requests.post(url, json={"key": key}, headers=headers, timeout=10)
-        print("HTTP 狀態碼:", response.status_code)
-        return response.status_code == 200
-    except requests.exceptions.RequestException as e:
-        print("API 請求失敗:", e)
-        return False
-
-def open_unpaid_popup(token, profile, start_bot_callback):
-    popup = tk.Toplevel()
-    popup.title("山林 LINE 自動發送工具")
-    popup.iconbitmap(source_path("shanlink_icon.ico"))
-    popup.configure(bg="#2d2d2d")
-    popup.after(0, lambda: center_window(popup, 370, 180))
-    popup.attributes("-topmost", True)
-    popup.grab_set()
-    popup.focus_force()
-
-    label = tk.Label(
-        popup,
-        text="⚠️您未開啟服務",
-        font=("Arial", 14),
-        fg="#ff5555",
-        bg="#2d2d2d"
-    )
-    label.pack(pady=(18, 5))
-
-    msg = tk.Label(
-        popup,
-        text="請至官方LINE購買金鑰開啟服務！\n如果已開啟服務，請重新登入",
-        font=("Arial", 10),
-        wraplength=320,
-        justify=tk.CENTER,
-        fg="#eeeeee",
-        bg="#2d2d2d"
-    )
-    msg.pack(pady=(0, 10), padx=20)
-
-    key_entry = tk.Entry(popup, font=("Arial", 10), width=28)
-    key_entry.pack(pady=(0, 5))
-
-    def redeem_key():
-        key = key_entry.get().strip()
-        if not key:
-            messagebox.showerror("錯誤", "請輸入金鑰", parent=popup)
-            return
-        result = redeem_key_api(key, token)
-        if result:
-            messagebox.showinfo("成功", "兌換成功，服務已啟用！", parent=popup)
-            profile['enable'] = True
-            popup.destroy()
-            start_bot_callback(profile)
-        else:
-            messagebox.showerror("兌換失敗", "金鑰無效或已使用", parent=popup)
-
-    redeem_btn = tk.Button(
-        popup,
-        text="兌換金鑰",
-        command=redeem_key,
-        font=("Arial", 10),
-        fg="#fff",
-        bg="#44bb44",
-        activebackground="#66dd66",
-        activeforeground="#fff",
-        relief="flat",
-        bd=0,
-        padx=14,
-        pady=4,
-        cursor="hand2"
-    )
-    redeem_btn.pack(pady=(0, 8))
-
-def open_login_success_popup(profile):
-    popup = tk.Toplevel()
-    popup.iconbitmap(source_path("shanlink_icon.ico"))
-    popup.title("登入成功")
-
-    # 在顯示後再置中
-    popup.after(0, lambda: center_window(popup, 300, 120))
-
-    popup.attributes("-topmost", True)
-    popup.grab_set()
-    popup.focus_force()
-
-    label = tk.Label(popup, text=f"{profile['lineUserName']}恭喜你，登入成功！")
     label.pack(pady=20)
 
     close_btn = tk.Button(popup, text="關閉", command=popup.destroy)
@@ -383,7 +201,7 @@ def send(msg, sleep_time, is_expend):
         act.leave()
         time.sleep(sleep_time)
 
-def show_main_window(profile, token):
+def show_main_window():
     global window
 
     def update_estimated_time(*args):
@@ -424,7 +242,7 @@ def show_main_window(profile, token):
             if stop_flag:  # 🚨 偵測中止
                 print("⛔ 已中止執行")
                 progress_label.config(text="⛔ 已中止")
-                start_button.config(state="normal", text="開始執行", command=lambda: start_bot(profile))
+                start_button.config(state="normal", text="開始執行", command=start_bot)
                 return
 
             # index = i + start
@@ -450,18 +268,9 @@ def show_main_window(profile, token):
             progress_var.set(percent)
             window.update_idletasks()
 
-        # 計算實際執行時間
-        end_time = time.time()
-        actual_seconds = end_time - start_time
-        actual_minutes = actual_seconds / 60
-        
         progress_label.config(text="✅ 完成！")
-        start_button.config(state="normal", text="開始執行", command=lambda: start_bot(profile))
-        
-        # 發送包含時間資訊的訊息
-        msg_with_time = build_engineer_style_message(count, datetime.now(), estimated_minutes, actual_minutes)
-        line_push_message(profile['lineId'], msg_with_time)
-        
+        start_button.config(state="normal", text="開始執行", command=start_bot)
+
         open_finish_popup()
 
     def stop_bot():
@@ -469,31 +278,8 @@ def show_main_window(profile, token):
         stop_flag = True
         print("🛑 stop_flag 設為 True，等待 thread 偵測並中止")
 
-    def start_bot(profile):
+    def start_bot():
         global stop_flag
-        
-        # 檢查服務是否啟用或是否已過期
-        is_enabled = profile.get('enable') == True
-        expire_at = profile.get('expireAt')
-        is_expired = False
-        
-        if expire_at:
-            try:
-                from datetime import datetime
-                # 直接解析你的時間格式，不需要替換 Z
-                expire_time = datetime.fromisoformat(expire_at)
-                current_time = datetime.now()
-                is_expired = current_time > expire_time
-                print(f"過期時間: {expire_time}")
-                print(f"現在時間: {current_time}")
-                print(f"是否過期: {is_expired}")
-            except Exception as e:
-                print(f"解析過期時間失敗: {e}")
-                is_expired = True  # 解析失敗視為過期
-        
-        if not is_enabled or is_expired:
-            open_unpaid_popup(token, profile, start_bot)
-            return
 
         confirm = messagebox.askyesno("確認送出", "你確定要送出資料嗎？")
         if confirm:
@@ -583,9 +369,6 @@ def show_main_window(profile, token):
     window.grab_set()
     window.focus_force()
     window.after(100, lambda: window.attributes("-topmost", False))  # 100ms 後取消 topmost
-
-    # 再執行登入成功彈窗
-    window.after(200, lambda: open_login_success_popup(profile))
 
     # === 驗證函數 ===
     intcmd = (window.register(lambda P: P.isdigit() or P == ""), "%P")
@@ -697,7 +480,7 @@ def show_main_window(profile, token):
     progress_label.pack(pady=(0, 10))
 
     # 開始按鈕在最底部
-    start_button = tk.Button(window, text="開始執行", command=lambda: start_bot(profile))
+    start_button = tk.Button(window, text="開始執行", command=start_bot)
     start_button.pack(pady=(10, 2))
     # === 預估時間顯示區塊 ===
     estimate_label = tk.Label(window, text="", bg="gray15", fg="lightblue", font=("Arial", 10))
@@ -708,5 +491,4 @@ def show_main_window(profile, token):
     window.mainloop()
 
 if __name__ == "__main__":
-    threading.Thread(target=start_flask_server, daemon=True).start()
-    show_login_window()
+    show_main_window()
