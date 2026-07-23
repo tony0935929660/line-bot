@@ -213,7 +213,7 @@ def show_main_window():
         except:
             estimate_label.config(text="預估時間：-")
 
-    def run(msg, count, start, pin, sleep_time, is_expend):
+    def run(msg, count, start, pin, sleep_time, is_expend, window_interval_time):
         global stop_flag
         
         # 記錄開始時間
@@ -234,6 +234,8 @@ def show_main_window():
 
         print(f"🚀 從第 {start} 筆開始，總共發送 {count} 筆，釘選數量 {pin} 筆")
         
+        if window_interval_time > 0:
+            time.sleep(window_interval_time)
         act.ctrl_down_arrow()
         for j in range(start - 1):
             act.click_up_arrow()
@@ -252,6 +254,8 @@ def show_main_window():
 
             # if (index > 0):
                 # act.click_up_arrow()
+            if window_interval_time > 0:
+                time.sleep(window_interval_time)
             act.ctrl_down_arrow()
 
             send(msg, sleep_time, is_expend)
@@ -290,6 +294,7 @@ def show_main_window():
             pin = int(pin_entry.get())
             sleep_time = float(time_entry.get())
             is_expend = check_is_extend()
+            window_interval_time = float(window_interval_entry.get())
 
             start_button.config(
                 state="normal",
@@ -301,7 +306,7 @@ def show_main_window():
             window.update_idletasks()
 
             def run_with_ui_update():
-                run(msg, count, start, pin, sleep_time, is_expend)
+                run(msg, count, start, pin, sleep_time, is_expend, window_interval_time)
 
             threading.Thread(target=run_with_ui_update, daemon=True).start()
 
@@ -417,7 +422,7 @@ def show_main_window():
 
     tk.Label(right_frame, text="延遲時間：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
 
-    delay_options = ["0.25", "0.5", "0.75", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+    delay_options = ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"]
     delay_var = tk.StringVar(value="0.5")
 
     time_entry = ttk.Combobox(
@@ -429,6 +434,20 @@ def show_main_window():
     )
     time_entry.pack()
     time_entry.bind("<<ComboboxSelected>>", update_estimated_time)
+
+    tk.Label(right_frame, text="視窗間隔時間：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
+
+    window_interval_options = ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"]
+    window_interval_var = tk.StringVar(value="0.2")
+
+    window_interval_entry = ttk.Combobox(
+        right_frame,
+        textvariable=window_interval_var,
+        values=window_interval_options,
+        width=28,
+        state="readonly"
+    )
+    window_interval_entry.pack()
 
     # tk.Label(right_frame, text="跳過人數：", bg="gray15", fg="white").pack(anchor="w", pady=(10, 5))
     start_entry = tk.Entry(right_frame, width=30, validate="key", validatecommand=intcmd)
